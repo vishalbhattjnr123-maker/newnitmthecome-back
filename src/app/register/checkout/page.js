@@ -229,7 +229,7 @@ function CheckoutContent() {
                         <PhoneCall className="w-4 h-4 text-[#D4AF37]" />
                         <h4 className="font-bold text-[#D4AF37] uppercase text-[9.5px]">Call Support</h4>
                         <p className="text-[10px] text-[#D9E1EC]/65 font-normal leading-relaxed">
-                            Reach director office at <strong className="text-white">8626-000-002</strong>.
+                            Reach director office at <strong className="text-white">96315-96066</strong>.
                         </p>
                     </div>
                     <div className="p-4 border border-[#D4AF37]/15 bg-[#0B2347] space-y-2">

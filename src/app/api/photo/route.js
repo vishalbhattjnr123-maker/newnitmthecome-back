@@ -20,7 +20,8 @@ export async function GET(request) {
             return new Response('Invalid URL source target', { status: 403, headers: corsHeaders });
         }
 
-        const token = process.env.BLOB_READ_WRITE_TOKEN;
+        const rawToken = process.env.BLOB_READ_WRITE_TOKEN || '';
+        const token = rawToken.replace(/^["']|["']$/g, '').trim();
         if (!token) {
             return new Response('Blob token is not configured on server', { status: 500, headers: corsHeaders });
         }

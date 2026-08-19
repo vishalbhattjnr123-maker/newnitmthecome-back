@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getRegistrations, updateRegistration } from '@/lib/db';
-import { sendConfirmationEmail } from '@/lib/email';
 import { getCorsHeaders, handleOptions } from '@/lib/cors';
 
 export async function OPTIONS(request) {
@@ -52,10 +51,6 @@ export async function POST(request) {
                 paymentDate: new Date().toISOString(),
                 applicationStatus: 'Payment Successful'
             });
-
-            // Dispatch Confirmation Email
-            await sendConfirmationEmail(updatedCandidate);
-
             return NextResponse.json({
                 success: true,
                 message: 'Payment verified and registration confirmed.',

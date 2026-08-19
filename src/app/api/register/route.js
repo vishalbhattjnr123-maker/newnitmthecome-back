@@ -1,9 +1,36 @@
 import { NextResponse } from 'next/server';
 import { addRegistration, getRegistrations } from '@/lib/db';
-import { put } from '@vercel/blob';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 import path from 'path';
-import { sendAdminNotificationEmail, sendCandidateRegistrationEmail } from '@/lib/email';
 import { getCorsHeaders, handleOptions } from '@/lib/cors';
+
+function sanitizeMessage(msg) {
+    if (typeof msg !== 'string') return msg;
+    let sanitized = msg;
+    const tokens = [
+        process.env.DB_BLOB_READ_WRITE_TOKEN,
+        process.env.CLOUDINARY_API_SECRET,
+        process.env.RAZORPAY_KEY_SECRET
+    ].map(t => t ? t.replace(/^["']|["']$/g, '').trim() : '');
+    for (const token of tokens) {
+        if (token && token.length > 3) {
+            const escaped = token.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+            const regex = new RegExp(escaped, 'g');
+            sanitized = sanitized.replace(regex, '[REDACTED]');
+        }
+    }
+    return sanitized;
+}
+
+function safeErrorLog(prefix, err) {
+    if (err instanceof Error) {
+        let msg = sanitizeMessage(err.message || '');
+        let stack = sanitizeMessage(err.stack || '');
+        console.error(prefix, { message: msg, name: err.name, stack: stack });
+    } else {
+        console.error(prefix, sanitizeMessage(String(err)));
+    }
+}
 
 export async function OPTIONS(request) {
     return handleOptions(request);
@@ -19,7 +46,7 @@ export async function POST(request) {
         const email = formData.get('email');
         const phone = formData.get('phone');
 
-        // Log "Registration received"
+        // Log "Registration received" / "Inquiry received"
         console.log(`${type === 'inquiry' ? 'Inquiry' : 'Registration'} received`);
 
         if (type === 'inquiry') {
@@ -53,58 +80,16 @@ export async function POST(request) {
             const registration = await addRegistration(inquiryData);
 
             // Log "Registration processed successfully"
-            console.log('Registration processed successfully');
+            console.log('Inquiry processed successfully');
 
-            const missingVars = [];
-            if (!process.env.SMTP_HOST) missingVars.push('SMTP_HOST');
-            if (!process.env.SMTP_PORT) missingVars.push('SMTP_PORT');
-            if (!process.env.SMTP_USER) missingVars.push('SMTP_USER');
-            if (!process.env.SMTP_PASS) missingVars.push('SMTP_PASS');
-            if (!process.env.SMTP_FROM) missingVars.push('SMTP_FROM');
-            if (!process.env.ADMIN_EMAIL) missingVars.push('ADMIN_EMAIL');
-
-            if (missingVars.length > 0) {
-                console.error(`[SMTP configuration missing] Missing required SMTP environment variables for inquiry: ${missingVars.join(', ')}`);
-                return NextResponse.json({
-                    success: true,
-                    registration,
-                    emailSent: false,
-                    warning: `Inquiry details stored, but email notifications failed to send. Missing configuration variables: ${missingVars.join(', ')}`
-                }, {
-                    status: 201,
-                    headers: corsHeaders
-                });
-            }
-
-            try {
-                const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || 'localhost:3000';
-                const protocol = request.headers.get('x-forwarded-proto') || 'https';
-                const baseUrl = `${protocol}://${host}`;
-                const emailResult = await sendAdminNotificationEmail(registration, baseUrl);
-                if (!emailResult) {
-                    throw new Error('SMTP connection or verification failure detected for admin notification email');
-                }
-                console.log('Email sent successfully');
-                return NextResponse.json({
-                    success: true,
-                    registration,
-                    emailSent: true
-                }, {
-                    status: 201,
-                    headers: corsHeaders
-                });
-            } catch (emailErr) {
-                console.error('Email sending failed securely:', emailErr);
-                return NextResponse.json({
-                    success: true,
-                    registration,
-                    emailSent: false,
-                    warning: `Inquiry details stored, but email notifications failed to send. Error: ${emailErr.message || 'SMTP service error'}`
-                }, {
-                    status: 201,
-                    headers: corsHeaders
-                });
-            }
+            return NextResponse.json({
+                success: true,
+                registration,
+                emailSent: false
+            }, {
+                status: 201,
+                headers: corsHeaders
+            });
         }
 
         // Original registration flow
@@ -120,7 +105,7 @@ export async function POST(request) {
         const closeUpPhoto = formData.get('closeUpPhoto');
 
         if (!name || !instagramUsername || !dateOfBirth || !email || !phone || !whatsapp || !height || !state || !city || !pincode) {
-            return NextResponse.json({ error: 'Missing required text fields. Please complete all fields.' }, { status: 400, headers: corsHeaders });
+            return NextResponse.json({ success: false, error: 'Missing required text fields. Please complete all fields.' }, { status: 400, headers: corsHeaders });
         }
 
         const registrations = await getRegistrations();
@@ -129,11 +114,11 @@ export async function POST(request) {
             r.paymentStatus === 'PAID'
         );
         if (duplicate) {
-            return NextResponse.json({ error: 'This email address or phone number is already registered and database status is PAID.' }, { status: 400, headers: corsHeaders });
+            return NextResponse.json({ success: false, error: 'This email address or phone number is already registered and database status is PAID.' }, { status: 400, headers: corsHeaders });
         }
 
         if (!fullLengthPhoto || !closeUpPhoto || typeof fullLengthPhoto === 'string' || typeof closeUpPhoto === 'string') {
-            return NextResponse.json({ error: 'Both photos (Full Length and Close-up) are required.' }, { status: 400, headers: corsHeaders });
+            return NextResponse.json({ success: false, error: 'Both photos (Full Length and Close-up) are required.' }, { status: 400, headers: corsHeaders });
         }
 
         const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
@@ -155,25 +140,52 @@ export async function POST(request) {
             validatePhoto(fullLengthPhoto, 'Full Length Photo');
             validatePhoto(closeUpPhoto, 'Close-Up Photo');
         } catch (validationErr) {
-            return NextResponse.json({ error: validationErr.message }, { status: 400, headers: corsHeaders });
+            return NextResponse.json({ success: false, error: validationErr.message }, { status: 400, headers: corsHeaders });
         }
 
         const randomNum = Math.floor(100000 + Math.random() * 900000);
         const registrationId = `NINTM-${randomNum}`;
 
-        // Upload Full Length Photo to Vercel Blob
-        const fullLengthExt = path.extname(fullLengthPhoto.name).toLowerCase() || '.jpg';
-        const fullLengthFileName = `${registrationId}-fullLength${fullLengthExt}`;
-        const fullLengthBlob = await put(fullLengthFileName, fullLengthPhoto, {
-            access: 'private',
-        });
+        const timestamp = Date.now();
 
-        // Upload Close-Up Photo to Vercel Blob
-        const closeUpExt = path.extname(closeUpPhoto.name).toLowerCase() || '.jpg';
-        const closeUpFileName = `${registrationId}-closeUp${closeUpExt}`;
-        const closeUpBlob = await put(closeUpFileName, closeUpPhoto, {
-            access: 'private',
-        });
+        let fullLengthUrl = '';
+        let closeUpUrl = '';
+        try {
+            // Upload Full Length Photo to Cloudinary
+            const fullLengthBytes = await fullLengthPhoto.arrayBuffer();
+            const fullLengthBuffer = Buffer.from(fullLengthBytes);
+            const fullLengthExt = path.extname(fullLengthPhoto.name).toLowerCase() || '.jpg';
+            const fullLengthFileName = `full-length-${timestamp}${fullLengthExt}`;
+
+            const fullLengthResult = await uploadToCloudinary(
+                fullLengthBuffer,
+                `nintm/registrations/${registrationId}`,
+                fullLengthFileName
+            );
+            fullLengthUrl = fullLengthResult.secure_url;
+
+            // Upload Close-Up Photo to Cloudinary
+            const closeUpBytes = await closeUpPhoto.arrayBuffer();
+            const closeUpBuffer = Buffer.from(closeUpBytes);
+            const closeUpExt = path.extname(closeUpPhoto.name).toLowerCase() || '.jpg';
+            const closeUpFileName = `close-up-${timestamp}${closeUpExt}`;
+
+            const closeUpResult = await uploadToCloudinary(
+                closeUpBuffer,
+                `nintm/registrations/${registrationId}`,
+                closeUpFileName
+            );
+            closeUpUrl = closeUpResult.secure_url;
+        } catch (uploadError) {
+            safeErrorLog('[REGISTER] Cloudinary upload failed:', uploadError);
+            return NextResponse.json({
+                success: false,
+                error: `Photo upload failed: ${sanitizeMessage(uploadError.message || 'Unknown upload or registration runtime error.')}`
+            }, {
+                status: 500,
+                headers: corsHeaders
+            });
+        }
 
         const registrationData = {
             registrationId,
@@ -190,8 +202,8 @@ export async function POST(request) {
             state,
             city,
             pincode,
-            fullLengthPhoto: fullLengthBlob.url,
-            closeUpPhoto: closeUpBlob.url,
+            fullLengthPhoto: fullLengthUrl,
+            closeUpPhoto: closeUpUrl,
             paymentStatus: 'PENDING',
             paymentAmount: 0
         };
@@ -201,67 +213,33 @@ export async function POST(request) {
         // Log "Registration processed successfully"
         console.log('Registration processed successfully');
 
-        const missingVars = [];
-        if (!process.env.SMTP_HOST) missingVars.push('SMTP_HOST');
-        if (!process.env.SMTP_PORT) missingVars.push('SMTP_PORT');
-        if (!process.env.SMTP_USER) missingVars.push('SMTP_USER');
-        if (!process.env.SMTP_PASS) missingVars.push('SMTP_PASS');
-        if (!process.env.SMTP_FROM) missingVars.push('SMTP_FROM');
-        if (!process.env.ADMIN_EMAIL) missingVars.push('ADMIN_EMAIL');
-
-        if (missingVars.length > 0) {
-            console.error(`[SMTP configuration missing] Missing required SMTP environment variables for registration: ${missingVars.join(', ')}`);
-            return NextResponse.json({
-                success: true,
-                registration,
-                emailSent: false,
-                warning: `Registration details stored, but email notifications failed to send. Missing configuration variables: ${missingVars.join(', ')}`
-            }, {
-                status: 201,
-                headers: corsHeaders
-            });
-        }
-
-        try {
-            const host = request.headers.get('x-forwarded-host') || request.headers.get('host') || 'localhost:3000';
-            const protocol = request.headers.get('x-forwarded-proto') || 'https';
-            const baseUrl = `${protocol}://${host}`;
-
-            const adminSuccess = await sendAdminNotificationEmail(registration, baseUrl);
-            const candidateSuccess = await sendCandidateRegistrationEmail(registration, baseUrl);
-
-            if (!adminSuccess || !candidateSuccess) {
-                console.error(`[SMTP dispatch warning] Email dispatch failed/partially failed. Admin sent: ${adminSuccess}, Candidate sent: ${candidateSuccess}`);
-                return NextResponse.json({
-                    success: true,
-                    registration,
-                    emailSent: false,
-                    warning: 'Registration saved, but one or more email notifications failed to send. Check SMTP connection.'
-                }, {
-                    status: 201,
-                    headers: corsHeaders
-                });
+        return NextResponse.json({
+            success: true,
+            registration: {
+                registrationId: registration.registrationId,
+                name: registration.name,
+                instagramUsername: registration.instagramUsername,
+                dateOfBirth: registration.dateOfBirth,
+                email: registration.email,
+                phone: registration.phone,
+                whatsapp: registration.whatsapp,
+                height: registration.height,
+                state: registration.state,
+                city: registration.city,
+                pincode: registration.pincode,
+                fullLengthPhoto: registration.fullLengthPhoto,
+                closeUpPhoto: registration.closeUpPhoto
             }
+        }, {
+            status: 201,
+            headers: corsHeaders
+        });
 
-            console.log('Emails sent successfully');
-            return NextResponse.json({ success: true, registration, emailSent: true }, { status: 201, headers: corsHeaders });
-        } catch (emailErr) {
-            console.error('Secure email sending failed:', emailErr);
-            return NextResponse.json({
-                success: true,
-                registration,
-                emailSent: false,
-                warning: `Registration details stored, but email notifications failed to send. Error: ${emailErr.message || 'SMTP service error'}. Please check configurations or try again.`
-            }, {
-                status: 201,
-                headers: corsHeaders
-            });
-        }
     } catch (error) {
-        console.error('API Register error:', error);
+        safeErrorLog('[REGISTER] Blob upload failed:', error);
         return NextResponse.json({
             success: false,
-            error: error.message || 'An error occurred during registration creation.'
+            error: `Photo upload failed: ${sanitizeMessage(error.message || 'Unknown upload or registration runtime error.')}`
         }, {
             status: 500,
             headers: corsHeaders

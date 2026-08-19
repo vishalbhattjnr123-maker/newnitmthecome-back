@@ -7,7 +7,9 @@ const DB_FILE = path.join(DB_DIR, 'db.json');
 
 // Check if running on Vercel/production and we have Vercel Blob credentials
 const isServerless = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
-const hasBlobToken = !!process.env.BLOB_READ_WRITE_TOKEN;
+const rawToken = process.env.DB_BLOB_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN_DB || process.env.BLOB_READ_WRITE_TOKEN || '';
+const blobToken = rawToken.replace(/^["']|["']$/g, '').trim();
+const hasBlobToken = !!blobToken;
 const useRemoteBlob = isServerless && hasBlobToken;
 
 // Ensure database directory and file exist locally (development fallback)
@@ -23,7 +25,10 @@ function initializeLocalDB() {
 export async function getRegistrations() {
     if (useRemoteBlob) {
         try {
-            const { blobs } = await list({ prefix: 'db.json' });
+            const { blobs } = await list({
+                prefix: 'db.json',
+                token: blobToken
+            });
             const dbBlob = blobs.find(b => b.pathname === 'db.json');
             if (!dbBlob) {
                 // If db.json does not exist on Vercel Blob, return empty dataset
@@ -31,7 +36,7 @@ export async function getRegistrations() {
             }
             const res = await fetch(dbBlob.url, {
                 headers: {
-                    Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`
+                    Authorization: `Bearer ${blobToken}`
                 }
             });
             if (!res.ok) {
@@ -67,7 +72,8 @@ export async function saveRegistrations(registrations) {
         try {
             await put('db.json', JSON.stringify({ registrations }, null, 2), {
                 access: 'private',
-                addRandomSuffix: false
+                addRandomSuffix: false,
+                token: blobToken
             });
             return true;
         } catch (error) {
@@ -165,4 +171,3 @@ export async function updateRegistrationStatus(id, paymentStatus, applicationSta
     }
     return await updateRegistration(id, updates);
 }
-

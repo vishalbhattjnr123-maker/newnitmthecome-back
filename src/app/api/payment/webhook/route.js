@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getRegistrations, updateRegistration } from '@/lib/db';
-import { sendConfirmationEmail } from '@/lib/email';
 import { getCorsHeaders, handleOptions } from '@/lib/cors';
 
 export async function OPTIONS(request) {
@@ -84,7 +83,6 @@ export async function POST(request) {
                 });
 
                 console.log(`Webhook updated payment status to PAID for Registration : ${candidate.registrationId}`);
-                await sendConfirmationEmail(updatedCandidate);
             }
         } else if (event === 'payment.failed') {
             if (candidate.paymentStatus !== 'PAID') {

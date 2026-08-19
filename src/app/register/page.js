@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { Upload, X, Camera, AlertCircle } from 'lucide-react';
+import PhotoUpload from '@/components/PhotoUpload';
+import { Upload, AlertCircle } from 'lucide-react';
 
 export default function Register() {
     const router = useRouter();
@@ -104,6 +105,14 @@ export default function Register() {
             return;
         }
 
+        // Pre-open blank tab to bypass modern popup blockers (must be synchronous with user click gesture)
+        let whatsappWindow = null;
+        try {
+            whatsappWindow = window.open('about:blank', '_blank');
+        } catch (popenErr) {
+            console.error('Pop-up pre-opening failed:', popenErr);
+        }
+
         setIsSubmitting(true);
 
         try {
@@ -135,66 +144,51 @@ export default function Register() {
 
             const reg = data.registration;
 
-            // Generate absolute photo urls targeting the backend proxy
-            const photoUrlBase = apiBase || window.location.origin;
-            const fullLengthUrl = reg.fullLengthPhoto ? `${photoUrlBase}/api/photo?url=${encodeURIComponent(reg.fullLengthPhoto)}` : '';
-            const closeUpUrl = reg.closeUpPhoto ? `${photoUrlBase}/api/photo?url=${encodeURIComponent(reg.closeUpPhoto)}` : '';
+            // Use direct Vercel Blob URLs so they render instantly with rich previews in WhatsApp
+            const fullLengthUrl = reg.fullLengthPhoto || '';
+            const closeUpUrl = reg.closeUpPhoto || '';
 
             // Prepare WhatsApp pre-filled message
-            const whatsappMessage = `Hello NINTM Team,
+            const whatsappMessage = `NINTM – THE COMEBACK 2026
 
-I have registered for NINTM – The Comeback 2026.
-
-REGISTRATION DETAILS
+NEW REGISTRATION
 
 Registration ID: ${reg.registrationId}
-
 Name: ${reg.name}
-
 Instagram Username: ${reg.instagramUsername}
-
 Date of Birth: ${reg.dateOfBirth}
-
 Email: ${reg.email}
-
 Phone Number: ${reg.phone}
-
 WhatsApp Number: ${reg.whatsapp}
-
 Height: ${reg.height}
-
 State: ${reg.state}
-
 City: ${reg.city}
-
 Pincode: ${reg.pincode}
 
 PHOTO DETAILS
 
-Full Length Photo: Uploaded
-Close-Up Photo: Uploaded
+Full Length Photo:
+${fullLengthUrl}
 
-Photo Links:
-Full Length: ${fullLengthUrl}
-Close-Up: ${closeUpUrl}
+Close-Up Photo:
+${closeUpUrl}
 
-PAYMENT STATUS
-
-Payment Status: Pending
+PAYMENT
 
 Registration Fee: ₹699
+Payment Status: Pending`;
 
-I would like to proceed with my NINTM – The Comeback 2026 registration.
-
-Thank you.`;
-
-            // Open WhatsApp in new tab
+            // Open WhatsApp in new tab (bypassing popup-blocker)
             const targetPhone = '919631596066';
             const encodedText = encodeURIComponent(whatsappMessage);
             const whatsappUrl = `https://wa.me/${targetPhone}?text=${encodedText}`;
 
             try {
-                window.open(whatsappUrl, '_blank');
+                if (whatsappWindow) {
+                    whatsappWindow.location.href = whatsappUrl;
+                } else {
+                    window.open(whatsappUrl, '_blank');
+                }
             } catch (err) {
                 console.error('Failed to trigger pop-up redirect for WhatsApp.', err);
             }
@@ -204,6 +198,13 @@ Thank you.`;
 
         } catch (err) {
             console.error(err);
+            if (whatsappWindow) {
+                try {
+                    whatsappWindow.close();
+                } catch (closeErr) {
+                    console.error('Failed to close fallback whatsapp window:', closeErr);
+                }
+            }
             setErrorMsg(err.message || 'An error occurred during submission.');
             setIsSubmitting(false);
         }
@@ -249,7 +250,7 @@ Thank you.`;
                     <h3 className="font-serif text-[#D4AF37] text-sm uppercase font-bold mb-2">Instructions & Guidelines</h3>
                     <ul className="list-disc pl-5 space-y-1 my-2">
                         <li>Fill details accurately. The same Registration ID is used if payment is retried.</li>
-                        <li>Submit your details to open candidates inquiry on WhatsApp <strong>(+91 8626-000-002)</strong> before redirected to secure checkout.</li>
+                        <li>Submit your details to open candidates inquiry on WhatsApp <strong>(+91 96315-96066)</strong> before redirected to secure checkout.</li>
                         <li>Registration requires exactly <strong>2 photographs</strong> (Full length + Close-up). Max 5 MB each. Allowed: JPG, JPEG, PNG, WEBP.</li>
                     </ul>
                 </div>
@@ -448,118 +449,26 @@ Thank you.`;
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
                                 {/* Photo 1: Full Length */}
-                                <div className="border border-[#D4AF37]/15 p-6 bg-[#081C3A] flex flex-col justify-between space-y-4">
-                                    <div>
-                                        <label className="text-[10.5px] uppercase tracking-wider text-white font-bold block">
-                                            Full Length Photo *
-                                        </label>
-                                        <p className="text-[9px] text-[#D9E1EC]/40 leading-relaxed mt-0.5">
-                                            Clear, straight pose showing entire silhouette.
-                                        </p>
-                                    </div>
-
-                                    {previews.fullLength ? (
-                                        <div className="relative aspect-[3/4] w-full border border-[#D4AF37]/35 overflow-hidden group bg-black/40">
-                                            <Image
-                                                src={previews.fullLength}
-                                                alt="Full Length Preview"
-                                                fill
-                                                sizes="(max-width: 768px) 100vw, 400px"
-                                                className="object-contain"
-                                            />
-                                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity gap-3">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => fullLengthInputRef.current?.click()}
-                                                    className="px-3 py-1.5 bg-[#D4AF37] text-[#081C3A] font-bold text-[9px] uppercase tracking-wider hover:bg-white transition-colors"
-                                                >
-                                                    Replace
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleRemovePhoto('fullLength')}
-                                                    className="p-1.5 bg-red-600 text-white hover:bg-red-700 transition-colors"
-                                                >
-                                                    <X className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div
-                                            onClick={() => fullLengthInputRef.current?.click()}
-                                            className="border-2 border-dashed border-[#D4AF37]/25 hover:border-[#D4AF37]/60 aspect-[3/4] cursor-pointer flex flex-col items-center justify-center bg-[#0B2347]/50 gap-2 transition-all p-4"
-                                        >
-                                            <Camera className="w-8 h-8 text-[#D4AF37]/60" />
-                                            <span className="text-[10px] text-[#D9E1EC]/60 uppercase tracking-widest font-bold">Select Full Length Image</span>
-                                            <span className="text-[9px] text-[#D9E1EC]/30">Click to upload</span>
-                                        </div>
-                                    )}
-
-                                    <input
-                                        type="file"
-                                        ref={fullLengthInputRef}
-                                        accept=".jpg,.jpeg,.png,.webp"
-                                        onChange={(e) => handleFileChange(e, 'fullLength')}
-                                        className="hidden"
-                                    />
-                                </div>
+                                <PhotoUpload
+                                    label="Full Length Photo *"
+                                    sublabel="Clear, straight pose showing entire silhouette."
+                                    preview={previews.fullLength}
+                                    inputRef={fullLengthInputRef}
+                                    onSelectImage={handleFileChange}
+                                    onRemove={handleRemovePhoto}
+                                    fieldName="fullLength"
+                                />
 
                                 {/* Photo 2: Close-Up */}
-                                <div className="border border-[#D4AF37]/15 p-6 bg-[#081C3A] flex flex-col justify-between space-y-4">
-                                    <div>
-                                        <label className="text-[10.5px] uppercase tracking-wider text-white font-bold block">
-                                            Close-Up Photo *
-                                        </label>
-                                        <p className="text-[9px] text-[#D9E1EC]/40 leading-relaxed mt-0.5">
-                                            Headshot focusing on features. Flat daylight preferred.
-                                        </p>
-                                    </div>
-
-                                    {previews.closeUp ? (
-                                        <div className="relative aspect-[3/4] w-full border border-[#D4AF37]/35 overflow-hidden group bg-black/40">
-                                            <Image
-                                                src={previews.closeUp}
-                                                alt="Close Up Preview"
-                                                fill
-                                                sizes="(max-width: 768px) 100vw, 400px"
-                                                className="object-contain"
-                                            />
-                                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity gap-3">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => closeUpInputRef.current?.click()}
-                                                    className="px-3 py-1.5 bg-[#D4AF37] text-[#081C3A] font-bold text-[9px] uppercase tracking-wider hover:bg-white transition-colors"
-                                                >
-                                                    Replace
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleRemovePhoto('closeUp')}
-                                                    className="p-1.5 bg-red-600 text-white hover:bg-red-700 transition-colors"
-                                                >
-                                                    <X className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div
-                                            onClick={() => closeUpInputRef.current?.click()}
-                                            className="border-2 border-dashed border-[#D4AF37]/25 hover:border-[#D4AF37]/60 aspect-[3/4] cursor-pointer flex flex-col items-center justify-center bg-[#0B2347]/50 gap-2 transition-all p-4"
-                                        >
-                                            <Camera className="w-8 h-8 text-[#D4AF37]/60" />
-                                            <span className="text-[10px] text-[#D9E1EC]/60 uppercase tracking-widest font-bold">Select Close-Up Image</span>
-                                            <span className="text-[9px] text-[#D9E1EC]/30">Click to upload</span>
-                                        </div>
-                                    )}
-
-                                    <input
-                                        type="file"
-                                        ref={closeUpInputRef}
-                                        accept=".jpg,.jpeg,.png,.webp"
-                                        onChange={(e) => handleFileChange(e, 'closeUp')}
-                                        className="hidden"
-                                    />
-                                </div>
+                                <PhotoUpload
+                                    label="Close-Up Photo *"
+                                    sublabel="Headshot focusing on features. Flat daylight preferred."
+                                    preview={previews.closeUp}
+                                    inputRef={closeUpInputRef}
+                                    onSelectImage={handleFileChange}
+                                    onRemove={handleRemovePhoto}
+                                    fieldName="closeUp"
+                                />
                             </div>
                         </div>
 
