@@ -1619,6 +1619,33 @@
       "createdAt": "2026-08-19T09:30:59.948Z",
       "updatedAt": "2026-08-19T09:31:20.440Z",
       "applicationStatus": "Payment Pending"
+    },
+    {
+      "registrationId": "NINTM-366802",
+      "id": "NINTM-366802",
+      "name": "Boxfy",
+      "fullName": "Boxfy",
+      "instagramUsername": "fgdghsdf",
+      "dateOfBirth": "2026-08-03",
+      "dob": "2026-08-03",
+      "email": "boxfy123@gmail.com",
+      "phone": "7018408855",
+      "whatsapp": "7018408855",
+      "height": "178",
+      "state": "Kerala",
+      "city": "chandigarh",
+      "pincode": "160014",
+      "fullLengthPhoto": "https://res.cloudinary.com/jludkgka/image/upload/v1787134337/nintm/registrations/NINTM-366802/full-length-1787134329272.jpg",
+      "closeUpPhoto": "https://res.cloudinary.com/jludkgka/image/upload/v1787134339/nintm/registrations/NINTM-366802/close-up-1787134329272.jpg",
+      "paymentStatus": "PENDING",
+      "paymentAmount": 0,
+      "razorpayOrderId": "",
+      "razorpayPaymentId": "",
+      "razorpaySignature": "",
+      "paymentDate": "",
+      "createdAt": "2026-08-19T10:12:17.281Z",
+      "updatedAt": "2026-08-19T10:12:17.281Z",
+      "applicationStatus": "Payment Pending"
     }
   ]
 }
