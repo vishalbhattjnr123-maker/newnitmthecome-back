@@ -38,8 +38,8 @@ export async function POST(request) {
         const amountInPaise = Math.round(totalAmount * 100);
 
         // Check if environment variables are configured
-        const keyId = process.env.NODE_ENV === 'production' ? RAZORPAY_LIVE_KEY_ID : RAZORPAY_TEST_KEY_ID;
-        const keySecret = process.env.NODE_ENV === 'production' ? RAZORPAY_LIVE_KEY_SECRET : RAZORPAY_TEST_KEY_SECRET;
+        const keyId = process.env.RAZORPAY_KEY_ID;
+        const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
         if (!keyId || !keySecret) {
             console.error('Razorpay credentials missing or set to placeholders.');

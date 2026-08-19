@@ -1646,6 +1646,33 @@
       "createdAt": "2026-08-19T10:12:17.281Z",
       "updatedAt": "2026-08-19T10:12:17.281Z",
       "applicationStatus": "Payment Pending"
+    },
+    {
+      "registrationId": "NINTM-132474",
+      "id": "NINTM-132474",
+      "name": "test",
+      "fullName": "test",
+      "instagramUsername": "hello",
+      "dateOfBirth": "2026-08-21",
+      "dob": "2026-08-21",
+      "email": "morphmeta34@gmail.com",
+      "phone": "09815489999",
+      "whatsapp": "98154899999",
+      "height": "193",
+      "state": "Chandigarh (UT)",
+      "city": "Chandigarh",
+      "pincode": "160022",
+      "fullLengthPhoto": "https://res.cloudinary.com/cxl24ynq/image/upload/v1787152185/nintm/registrations/NINTM-132474/full-length-1787152182938.png",
+      "closeUpPhoto": "https://res.cloudinary.com/cxl24ynq/image/upload/v1787152186/nintm/registrations/NINTM-132474/close-up-1787152182938.png",
+      "paymentStatus": "PENDING",
+      "paymentAmount": 0,
+      "razorpayOrderId": "",
+      "razorpayPaymentId": "",
+      "razorpaySignature": "",
+      "paymentDate": "",
+      "createdAt": "2026-08-19T15:09:47.044Z",
+      "updatedAt": "2026-08-19T15:09:47.044Z",
+      "applicationStatus": "Payment Pending"
     }
   ]
 }

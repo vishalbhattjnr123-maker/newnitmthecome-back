@@ -26,6 +26,11 @@ export async function POST(request) {
 
         const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
+        if (!keySecret) {
+            console.error('Razorpay key secret not configured for verification.');
+            return NextResponse.json({ error: 'Payment gateway configuration error.' }, { status: 500, headers: corsHeaders });
+        }
+
         // Perform HMAC signature generation
         const hmac = crypto.createHmac('sha256', keySecret);
         hmac.update(razorpay_order_id + "|" + razorpay_payment_id);
