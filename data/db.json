@@ -1665,13 +1665,13 @@
       "fullLengthPhoto": "https://res.cloudinary.com/cxl24ynq/image/upload/v1787152185/nintm/registrations/NINTM-132474/full-length-1787152182938.png",
       "closeUpPhoto": "https://res.cloudinary.com/cxl24ynq/image/upload/v1787152186/nintm/registrations/NINTM-132474/close-up-1787152182938.png",
       "paymentStatus": "PENDING",
-      "paymentAmount": 0,
-      "razorpayOrderId": "",
+      "paymentAmount": 699,
+      "razorpayOrderId": "order_TRfsY1ce9Ne0cS",
       "razorpayPaymentId": "",
       "razorpaySignature": "",
       "paymentDate": "",
       "createdAt": "2026-08-19T15:09:47.044Z",
-      "updatedAt": "2026-08-19T15:09:47.044Z",
+      "updatedAt": "2026-08-19T15:16:17.375Z",
       "applicationStatus": "Payment Pending"
     }
   ]
