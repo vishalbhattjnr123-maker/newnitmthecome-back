@@ -24,24 +24,30 @@ function CheckoutContent() {
     const [totalAmount, setTotalAmount] = useState(699);
 
     useEffect(() => {
-        if (!regId) {
+        const params = new URLSearchParams(window.location.search);
+        const resolvedId = regId || params.get('id');
+
+        if (!resolvedId) {
             setLoading(false);
             return;
         }
 
+        setLoading(true);
         const apiBase = '';
-        fetch(`${apiBase}/api/admin?search=${regId}`)
+        fetch(`${apiBase}/api/admin?search=${resolvedId}`)
             .then((res) => res.json())
             .then((data) => {
                 if (data.success && data.registrations.length > 0) {
-                    const match = data.registrations[0];
+                    const match = data.registrations.find(
+                        r => r.registrationId === resolvedId || r.id === resolvedId
+                    ) || data.registrations[0];
                     setApplicant(match);
 
                     const calculatedGst = 0;
                     setGstAmount(calculatedGst);
                     setTotalAmount(baseFee + calculatedGst);
                 }
-                setLoading(false)
+                setLoading(false);
             })
             .catch((err) => {
                 console.error('Error fetching checkout candidate details:', err);

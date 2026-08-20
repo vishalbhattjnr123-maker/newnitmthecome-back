@@ -19,17 +19,24 @@ function SuccessContent() {
     const [showEmailNotice, setShowEmailNotice] = useState(false);
 
     useEffect(() => {
-        if (!regId) {
+        const params = new URLSearchParams(window.location.search);
+        const resolvedId = regId || params.get('id');
+
+        if (!resolvedId) {
             setLoading(false);
             return;
         }
 
+        setLoading(true);
         const apiBase = '';
-        fetch(`${apiBase}/api/admin?search=${regId}`)
+        fetch(`${apiBase}/api/admin?search=${resolvedId}`)
             .then((res) => res.json())
             .then((data) => {
                 if (data.success && data.registrations.length > 0) {
-                    setCandidate(data.registrations[0]);
+                    const match = data.registrations.find(
+                        r => r.registrationId === resolvedId || r.id === resolvedId
+                    ) || data.registrations[0];
+                    setCandidate(match);
                     setShowEmailNotice(true);
                 }
                 setLoading(false);

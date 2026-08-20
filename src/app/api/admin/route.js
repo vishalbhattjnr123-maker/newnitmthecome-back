@@ -24,12 +24,12 @@ export async function GET(request) {
         if (search) {
             const q = search.toLowerCase();
             list = list.filter(r =>
-                (r.registrationId && r.registrationId.toLowerCase().includes(q)) ||
-                (r.id && r.id.toLowerCase().includes(q)) ||
-                (r.name && r.name.toLowerCase().includes(q)) ||
-                (r.fullName && r.fullName.toLowerCase().includes(q)) ||
-                (r.email && r.email.toLowerCase().includes(q)) ||
-                (r.phone && r.phone.toLowerCase().includes(q))
+                (r.registrationId && String(r.registrationId).toLowerCase().includes(q)) ||
+                (r.id && String(r.id).toLowerCase().includes(q)) ||
+                (r.name && String(r.name).toLowerCase().includes(q)) ||
+                (r.fullName && String(r.fullName).toLowerCase().includes(q)) ||
+                (r.email && String(r.email).toLowerCase().includes(q)) ||
+                (r.phone && String(r.phone).toLowerCase().includes(q))
             );
         }
 
