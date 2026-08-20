@@ -13,7 +13,7 @@ function sanitizeMessage(msg) {
     const tokens = [
         process.env.DB_BLOB_READ_WRITE_TOKEN,
         process.env.CLOUDINARY_API_SECRET,
-        process.env.RAZORPAY_KEY_SECRET
+        process.env.RAZORPAY_LIVE_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET
     ].map(t => t ? t.replace(/^["']|["']$/g, '').trim() : '');
     for (const token of tokens) {
         if (token && token.length > 3) {

@@ -30,7 +30,9 @@ export async function POST(request) {
         const rawSecret = process.env.RAZORPAY_LIVE_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET || '';
         const keySecret = rawSecret.replace(/^["']|["']$/g, '').trim();
 
-        if (!keySecret || keySecret === 'your_razorpay_key_secret') {
+        const isConfigured = keySecret && keySecret !== 'your_razorpay_key_secret' && keySecret !== 'your_razorpay_live_key_secret';
+
+        if (!isConfigured) {
             console.error('Razorpay key secret not configured or matching placeholder for verification.');
             return NextResponse.json({ error: 'Payment gateway configuration error.' }, { status: 500, headers: corsHeaders });
         }
@@ -59,6 +61,7 @@ export async function POST(request) {
                 razorpayPaymentId: razorpay_payment_id,
                 razorpaySignature: razorpay_signature,
                 paymentDate: new Date().toISOString(),
+                paymentAmount: candidate.paymentAmount || 699,
                 applicationStatus: 'Payment Successful'
             });
             return NextResponse.json({

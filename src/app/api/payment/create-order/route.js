@@ -47,7 +47,14 @@ export async function POST(request) {
         const keyId = rawKeyId.replace(/^["']|["']$/g, '').trim();
         const keySecret = rawKeySecret.replace(/^["']|["']$/g, '').trim();
 
-        const isConfigured = keyId && keySecret && keyId !== 'your_razorpay_key_id' && keySecret !== 'your_razorpay_key_secret';
+        const isConfigured = !!(
+            keyId &&
+            keySecret &&
+            keyId !== 'your_razorpay_key_id' &&
+            keyId !== 'your_razorpay_live_key_id' &&
+            keySecret !== 'your_razorpay_key_secret' &&
+            keySecret !== 'your_razorpay_live_key_secret'
+        );
 
         if (!isConfigured) {
             console.error('Razorpay credentials missing, unconfigured, or matching placeholders.');
