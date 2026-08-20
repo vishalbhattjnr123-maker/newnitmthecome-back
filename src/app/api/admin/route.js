@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getRegistrations, saveRegistrations } from '@/lib/db';
+import { getRegistrations, updateRegistration } from '@/lib/db';
 import { getCorsHeaders, handleOptions } from '@/lib/cors';
 
 export const dynamic = 'force-dynamic';
@@ -56,8 +56,15 @@ export async function GET(request) {
 
         console.log('[DB] Matching record count:', list.length);
 
-        const rzpId = (process.env.RAZORPAY_LIVE_KEY_ID || process.env.RAZORPAY_KEY_ID || '').replace(/^["']|["']$/g, '').trim();
-        const rzpSecret = (process.env.RAZORPAY_LIVE_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET || '').replace(/^["']|["']$/g, '').trim();
+        let rzpId = process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_LIVE_KEY_ID || '';
+        let rzpSecret = process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_LIVE_KEY_SECRET || '';
+        if (process.env.RAZORPAY_MODE === 'test' || (!rzpId && process.env.RAZORPAY_TEST_KEY_ID)) {
+            rzpId = process.env.RAZORPAY_TEST_KEY_ID || rzpId;
+            rzpSecret = process.env.RAZORPAY_TEST_KEY_SECRET || rzpSecret;
+        }
+        rzpId = rzpId.replace(/^["']|["']$/g, '').trim();
+        rzpSecret = rzpSecret.replace(/^["']|["']$/g, '').trim();
+
         const paymentConfigured = !!(
             rzpId &&
             rzpSecret &&
@@ -87,23 +94,21 @@ export async function POST(request) {
             return NextResponse.json({ error: 'Registration ID required' }, { status: 400, headers: corsHeaders });
         }
 
-        const registrations = await getRegistrations();
-        const index = registrations.findIndex(r => r.id === id || r.registrationId === id);
+        const updates = {};
+        if (action === 'updateStatus' && applicationStatus) {
+            updates.applicationStatus = applicationStatus;
+        }
+        if (adminNotes !== undefined) {
+            updates.adminNotes = adminNotes;
+        }
 
-        if (index === -1) {
+        const updated = await updateRegistration(id, updates);
+
+        if (!updated) {
             return NextResponse.json({ error: 'Applicant not found' }, { status: 404, headers: corsHeaders });
         }
 
-        if (action === 'updateStatus') {
-            registrations[index].applicationStatus = applicationStatus;
-        }
-
-        if (adminNotes !== undefined) {
-            registrations[index].adminNotes = adminNotes;
-        }
-
-        await saveRegistrations(registrations);
-        return NextResponse.json({ success: true, registration: registrations[index] }, { headers: corsHeaders });
+        return NextResponse.json({ success: true, registration: updated }, { headers: corsHeaders });
     } catch (error) {
         console.error('API Admin POST error:', error);
         return NextResponse.json({ error: 'An error occurred during updating applicant data.' }, { status: 500, headers: corsHeaders });

@@ -11,7 +11,9 @@ function sanitizeMessage(msg) {
     if (typeof msg !== 'string') return msg;
     let sanitized = msg;
     const tokens = [
-        process.env.DB_BLOB_READ_WRITE_TOKEN,
+        process.env.SUPABASE_SERVICE_ROLE_KEY,
+        process.env.SUPABASE_ANON_KEY,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
         process.env.CLOUDINARY_API_SECRET,
         process.env.RAZORPAY_LIVE_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET
     ].map(t => t ? t.replace(/^["']|["']$/g, '').trim() : '');
@@ -239,10 +241,10 @@ export async function POST(request) {
         });
 
     } catch (error) {
-        safeErrorLog('[REGISTER] Blob upload failed:', error);
+        safeErrorLog('[REGISTER] Registration failed:', error);
         return NextResponse.json({
             success: false,
-            error: `Photo upload failed: ${sanitizeMessage(error.message || 'Unknown upload or registration runtime error.')}`
+            error: `Registration failed: ${sanitizeMessage(error.message || 'Unknown registration runtime error.')}`
         }, {
             status: 500,
             headers: corsHeaders

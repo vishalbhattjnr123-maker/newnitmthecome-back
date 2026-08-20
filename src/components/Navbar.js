@@ -21,8 +21,6 @@ export default function Navbar() {
             }
         };
 
-        setHash(window.location.hash);
-
         const handleHashChange = () => {
             setHash(window.location.hash);
         };
@@ -43,10 +41,6 @@ export default function Navbar() {
             window.removeEventListener('click', handleLinkClick);
         };
     }, []);
-
-    useEffect(() => {
-        setHash(window.location.hash);
-    }, [pathname]);
 
     const navLinks = [
         { name: 'HOME', href: '/' },

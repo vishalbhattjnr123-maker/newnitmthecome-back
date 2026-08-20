@@ -26,50 +26,57 @@ function DashboardContent() {
     const searchParams = useSearchParams();
     const searchId = searchParams.get('id') || '';
 
-    const [regIdInput, setRegIdInput] = useState('');
+    const [regIdInput, setRegIdInput] = useState(searchId || '');
     const [candidate, setCandidate] = useState(null);
     const [loading, setLoading] = useState(false);
     const [searched, setSearched] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
 
-    const fetchProfile = (id) => {
-        if (!id) return;
-        loading || setLoading(true);
-        setErrorMsg('');
+    useEffect(() => {
+        if (!searchId) return;
 
-        const apiBase = '';
-        fetch(`${apiBase}/api/admin?search=${id.trim()}`)
-            .then((res) => res.json())
-            .then((data) => {
+        let isMounted = true;
+        const loadProfile = async () => {
+            try {
+                const res = await fetch(`/api/admin?search=${searchId.trim()}`);
+                const data = await res.json();
+                if (!isMounted) return;
+
                 if (data.success && data.registrations.length > 0) {
                     const match = data.registrations.find(
-                        r => r.id.toLowerCase() === id.trim().toLowerCase() || r.phone === id.trim()
+                        r => (r.registrationId && r.registrationId.toLowerCase() === searchId.trim().toLowerCase()) ||
+                             (r.id && r.id.toLowerCase() === searchId.trim().toLowerCase()) ||
+                             r.phone === searchId.trim()
                     );
                     if (match) {
                         setCandidate(match);
+                        setErrorMsg('');
                     } else {
                         setCandidate(null);
-                        setErrorMsg('Profile reference not found. Check ID or mobile number.');
+                        setErrorMsg('Profile reference not found.');
                     }
                 } else {
                     setCandidate(null);
                     setErrorMsg('Profile reference not found.');
                 }
-                setSearched(true);
-                setLoading(false);
-            })
-            .catch((err) => {
-                console.error(err);
-                setErrorMsg('Error fetching profile.');
-                setLoading(false);
-            });
-    };
+            } catch (err) {
+                if (isMounted) {
+                    console.error(err);
+                    setErrorMsg('Error fetching profile.');
+                }
+            } finally {
+                if (isMounted) {
+                    setSearched(true);
+                    setLoading(false);
+                }
+            }
+        };
 
-    useEffect(() => {
-        if (searchId) {
-            setRegIdInput(searchId);
-            fetchProfile(searchId);
-        }
+        loadProfile();
+
+        return () => {
+            isMounted = false;
+        };
     }, [searchId]);
 
     const handleLookupSubmit = (e) => {

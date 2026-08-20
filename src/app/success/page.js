@@ -20,24 +20,24 @@ function SuccessContent() {
     const [apiError, setApiError] = useState(null);
 
     useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const resolvedId = regId || params.get('id');
+        let isMounted = true;
+        const fetchSuccessCandidate = async () => {
+            const params = new URLSearchParams(window.location.search);
+            const resolvedId = regId || params.get('id');
 
-        if (!resolvedId) {
-            setLoading(false);
-            return;
-        }
+            if (!resolvedId) {
+                if (isMounted) setLoading(false);
+                return;
+            }
 
-        setLoading(true);
-        const apiBase = '';
-        fetch(`${apiBase}/api/admin?search=${resolvedId}`, { cache: 'no-store' })
-            .then((res) => {
+            try {
+                const res = await fetch(`/api/admin?search=${resolvedId}`, { cache: 'no-store' });
                 if (!res.ok) {
                     throw new Error(`Server returned status: ${res.status}`);
                 }
-                return res.json();
-            })
-            .then((data) => {
+                const data = await res.json();
+                if (!isMounted) return;
+
                 if (data.success && data.registrations.length > 0) {
                     const match = data.registrations.find(
                         r => r.registrationId === resolvedId || r.id === resolvedId
@@ -49,13 +49,21 @@ function SuccessContent() {
                 } else {
                     setCandidate(null);
                 }
-                setLoading(false);
-            })
-            .catch((err) => {
-                console.error('Success fetch error:', err);
-                setApiError(err.message || 'Unable to connect to registry server.');
-                setLoading(false);
-            });
+            } catch (err) {
+                if (isMounted) {
+                    console.error('Success fetch error:', err);
+                    setApiError(err.message || 'Unable to connect to registry server.');
+                }
+            } finally {
+                if (isMounted) setLoading(false);
+            }
+        };
+
+        fetchSuccessCandidate();
+
+        return () => {
+            isMounted = false;
+        };
     }, [regId]);
 
     const handlePrintReceipt = () => {

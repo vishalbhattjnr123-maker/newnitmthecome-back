@@ -1,21 +1,7 @@
-import fs from 'fs';
-import path from 'path';
-import { list, put } from '@vercel/blob';
 import { createClient } from '@supabase/supabase-js';
-
-const DB_DIR = path.join(process.cwd(), 'data');
-const DB_FILE = path.join(DB_DIR, 'db.json');
-
-// Check if running on Vercel/production and we have Vercel Blob credentials
-const isServerless = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
-const rawToken = process.env.DB_BLOB_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_TOKEN_DB || process.env.BLOB_READ_WRITE_TOKEN || '';
-const blobToken = rawToken.replace(/^["']|["']$/g, '').trim();
-const hasBlobToken = !!blobToken;
-const useRemoteBlob = isServerless && hasBlobToken;
 
 // Supabase Configuration
 const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '').replace(/^["']|["']$/g, '').trim();
-// Use service role key if available for serverless bypassing of RLS, else fallback to anon key
 const supabaseKey = (
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
@@ -23,19 +9,15 @@ const supabaseKey = (
     ''
 ).replace(/^["']|["']$/g, '').trim();
 
-const useSupabase = !!(supabaseUrl && supabaseKey);
-let supabase = null;
-
-if (useSupabase) {
-    supabase = createClient(supabaseUrl, supabaseKey, {
-        auth: {
-            persistSession: false
-        }
-    });
-    console.log('[DB] Supabase database client initialized successfully.');
-} else {
-    console.log('[DB] Supabase credentials not found. Falling back to Vercel Blob/local storage.');
+if (!supabaseUrl || !supabaseKey) {
+    console.error('[DB] Missing Supabase credentials. Please set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.');
 }
+
+const supabase = createClient(supabaseUrl, supabaseKey, {
+    auth: {
+        persistSession: false
+    }
+});
 
 // Database schema translation helpers
 function mapToDb(data) {
@@ -66,7 +48,8 @@ function mapToDb(data) {
         course: data.course || '',
         service: data.service || '',
         address: data.address || '',
-        type: data.type || 'registration'
+        type: data.type || 'registration',
+        admin_notes: data.adminNotes || data.admin_notes || ''
     };
 }
 
@@ -74,12 +57,12 @@ function mapFromDb(row) {
     if (!row) return null;
     return {
         registrationId: row.registration_id,
-        id: row.registration_id, // Alias for backward compatibility
+        id: row.registration_id,
         name: row.name,
-        fullName: row.name, // Alias for backward compatibility
+        fullName: row.name,
         instagramUsername: row.instagram_username,
         dateOfBirth: row.date_of_birth,
-        dob: row.date_of_birth, // Alias for backward compatibility
+        dob: row.date_of_birth,
         email: row.email,
         phone: row.phone,
         whatsapp: row.whatsapp,
@@ -102,132 +85,45 @@ function mapFromDb(row) {
         course: row.course,
         service: row.service,
         address: row.address,
-        type: row.type
+        type: row.type,
+        adminNotes: row.admin_notes || ''
     };
 }
 
-// Ensure database directory and file exist locally (development fallback)
-function initializeLocalDB() {
-    if (!fs.existsSync(DB_DIR)) {
-        fs.mkdirSync(DB_DIR, { recursive: true });
-    }
-    if (!fs.existsSync(DB_FILE)) {
-        fs.writeFileSync(DB_FILE, JSON.stringify({ registrations: [] }, null, 2), 'utf-8');
-    }
-}
-
 export async function getRegistrations() {
-    if (useSupabase) {
-        try {
-            const { data, error } = await supabase
-                .from('registrations')
-                .select('*');
-            if (error) throw error;
-            return (data || []).map(mapFromDb);
-        } catch (error) {
-            console.error('Error fetching registrations from Supabase, falling back to Vercel/Local:', error);
-        }
-    }
+    try {
+        const { data, error } = await supabase
+            .from('registrations')
+            .select('*')
+            .order('created_at', { ascending: false });
 
-    if (useRemoteBlob) {
-        try {
-            const { blobs } = await list({
-                prefix: 'db.json',
-                token: blobToken
-            });
-            const dbBlob = blobs.find(b => b.pathname === 'db.json');
-            if (!dbBlob) {
-                return [];
-            }
-            const res = await fetch(`${dbBlob.url}?t=${Date.now()}`, {
-                headers: {
-                    Authorization: `Bearer ${blobToken}`
-                },
-                cache: 'no-store',
-                next: { revalidate: 0 }
-            });
-            if (!res.ok) {
-                throw new Error(`Failed to fetch database file: ${res.statusText}`);
-            }
-            const data = await res.json();
-            return data.registrations || [];
-        } catch (error) {
-            console.error('Error reading registration DB from Vercel Blob:', error);
-            try {
-                initializeLocalDB();
-                const data = fs.readFileSync(DB_FILE, 'utf-8');
-                return JSON.parse(data).registrations || [];
-            } catch (fsErr) {
-                return [];
-            }
-        }
-    } else {
-        try {
-            initializeLocalDB();
-            const data = fs.readFileSync(DB_FILE, 'utf-8');
-            return JSON.parse(data).registrations || [];
-        } catch (error) {
-            console.error('Error reading registration DB locally:', error);
-            return [];
-        }
+        if (error) throw error;
+        return (data || []).map(mapFromDb);
+    } catch (error) {
+        console.error('[DB] Error fetching registrations from Supabase:', error);
+        return [];
     }
 }
 
-export async function saveRegistrations(registrations) {
-    // If Supabase is active, individual mutations are preferred.
-    // However, if we need bulk writes, we query updates inline.
-    if (useSupabase) {
-        try {
-            const rows = registrations.map(mapToDb);
-            const { error } = await supabase
-                .from('registrations')
-                .upsert(rows);
-            if (error) throw error;
-            console.log('[DB] Save successful: true (Supabase Upsert)');
-            return true;
-        } catch (error) {
-            console.error('Error bulk upserting to Supabase:', error);
-        }
-    }
+export async function getRegistrationById(id) {
+    if (!id) return null;
+    try {
+        const { data, error } = await supabase
+            .from('registrations')
+            .select('*')
+            .eq('registration_id', id)
+            .maybeSingle();
 
-    if (useRemoteBlob) {
-        try {
-            await put('db.json', JSON.stringify({ registrations }, null, 2), {
-                access: 'private',
-                addRandomSuffix: false,
-                token: blobToken
-            });
-            console.log('[DB] Save successful: true (Vercel Blob)');
-            return true;
-        } catch (error) {
-            console.error('Error writing registration DB to Vercel Blob:', error);
-            try {
-                initializeLocalDB();
-                fs.writeFileSync(DB_FILE, JSON.stringify({ registrations }, null, 2), 'utf-8');
-                console.log('[DB] Save successful: true (Local Fallback)');
-                return true;
-            } catch (fsErr) {
-                console.log('[DB] Save successful: false');
-                return false;
-            }
-        }
-    } else {
-        try {
-            initializeLocalDB();
-            fs.writeFileSync(DB_FILE, JSON.stringify({ registrations }, null, 2), 'utf-8');
-            console.log('[DB] Save successful: true (Local)');
-            return true;
-        } catch (error) {
-            console.error('Error writing to registration DB locally:', error);
-            console.log('[DB] Save successful: false');
-            return false;
-        }
+        if (error) throw error;
+        return mapFromDb(data);
+    } catch (error) {
+        console.error('[DB] Error fetching registration by ID:', error);
+        return null;
     }
 }
 
 export async function addRegistration(data) {
     const registrationId = data.registrationId || data.id || `NINTM-${Math.floor(100000 + Math.random() * 900000)}`;
-    console.log('[DB] Generated registration ID:', registrationId);
 
     const newRegistration = {
         registrationId,
@@ -259,101 +155,73 @@ export async function addRegistration(data) {
         course: data.course || '',
         service: data.service || '',
         address: data.address || '',
-        type: data.type || 'registration'
+        type: data.type || 'registration',
+        adminNotes: data.adminNotes || data.admin_notes || ''
     };
 
-    if (useSupabase) {
-        try {
-            const dbData = mapToDb(newRegistration);
-            const { error } = await supabase
-                .from('registrations')
-                .insert([dbData]);
-            if (error) throw error;
-            console.log('[DB] Save successful: true (Supabase Insert)');
-            return newRegistration;
-        } catch (error) {
-            console.error('Error inserting row in Supabase, falling back to JSON storage:', error);
-        }
-    }
+    try {
+        const dbData = mapToDb(newRegistration);
+        const { error } = await supabase
+            .from('registrations')
+            .insert([dbData]);
 
-    const registrations = await getRegistrations();
-    registrations.push(newRegistration);
-    await saveRegistrations(registrations);
-    return newRegistration;
+        if (error) throw error;
+        console.log('[DB] Registration added successfully in Supabase:', registrationId);
+        return newRegistration;
+    } catch (error) {
+        console.error('[DB] Error inserting row in Supabase:', error);
+        throw error;
+    }
 }
 
 export async function updateRegistration(id, updates) {
-    if (useSupabase) {
-        try {
-            const { data: existing, error: findError } = await supabase
-                .from('registrations')
-                .select('*')
-                .eq('registration_id', id);
+    try {
+        const dbUpdates = {};
+        if (updates.name !== undefined) dbUpdates.name = updates.name;
+        if (updates.fullName !== undefined) dbUpdates.name = updates.fullName;
+        if (updates.instagramUsername !== undefined) dbUpdates.instagram_username = updates.instagramUsername;
+        if (updates.dateOfBirth !== undefined) dbUpdates.date_of_birth = updates.dateOfBirth;
+        if (updates.dob !== undefined) dbUpdates.date_of_birth = updates.dob;
+        if (updates.email !== undefined) dbUpdates.email = updates.email;
+        if (updates.phone !== undefined) dbUpdates.phone = updates.phone;
+        if (updates.whatsapp !== undefined) dbUpdates.whatsapp = updates.whatsapp;
+        if (updates.height !== undefined) dbUpdates.height = updates.height;
+        if (updates.state !== undefined) dbUpdates.state = updates.state;
+        if (updates.city !== undefined) dbUpdates.city = updates.city;
+        if (updates.pincode !== undefined) dbUpdates.pincode = updates.pincode;
+        if (updates.fullLengthPhoto !== undefined) dbUpdates.full_length_photo = updates.fullLengthPhoto;
+        if (updates.closeUpPhoto !== undefined) dbUpdates.close_up_photo = updates.closeUpPhoto;
+        if (updates.paymentStatus !== undefined) dbUpdates.payment_status = updates.paymentStatus;
+        if (updates.paymentAmount !== undefined) dbUpdates.payment_amount = Number(updates.paymentAmount || 0);
+        if (updates.razorpayOrderId !== undefined) dbUpdates.razorpay_order_id = updates.razorpayOrderId;
+        if (updates.razorpayPaymentId !== undefined) dbUpdates.razorpay_payment_id = updates.razorpayPaymentId;
+        if (updates.razorpaySignature !== undefined) dbUpdates.razorpay_signature = updates.razorpaySignature;
+        if (updates.paymentDate !== undefined) dbUpdates.payment_date = updates.paymentDate;
+        if (updates.applicationStatus !== undefined) dbUpdates.application_status = updates.applicationStatus;
+        if (updates.message !== undefined) dbUpdates.message = updates.message;
+        if (updates.course !== undefined) dbUpdates.course = updates.course;
+        if (updates.service !== undefined) dbUpdates.service = updates.service;
+        if (updates.address !== undefined) dbUpdates.address = updates.address;
+        if (updates.type !== undefined) dbUpdates.type = updates.type;
+        if (updates.adminNotes !== undefined) dbUpdates.admin_notes = updates.adminNotes;
+        if (updates.admin_notes !== undefined) dbUpdates.admin_notes = updates.admin_notes;
 
-            if (findError) throw findError;
+        dbUpdates.updated_at = new Date().toISOString();
 
-            if (existing && existing.length > 0) {
-                const dbUpdates = {};
-                if (updates.name !== undefined) dbUpdates.name = updates.name;
-                if (updates.fullName !== undefined) dbUpdates.name = updates.fullName;
-                if (updates.instagramUsername !== undefined) dbUpdates.instagram_username = updates.instagramUsername;
-                if (updates.dateOfBirth !== undefined) dbUpdates.date_of_birth = updates.dateOfBirth;
-                if (updates.dob !== undefined) dbUpdates.date_of_birth = updates.dob;
-                if (updates.email !== undefined) dbUpdates.email = updates.email;
-                if (updates.phone !== undefined) dbUpdates.phone = updates.phone;
-                if (updates.whatsapp !== undefined) dbUpdates.whatsapp = updates.whatsapp;
-                if (updates.height !== undefined) dbUpdates.height = updates.height;
-                if (updates.state !== undefined) dbUpdates.state = updates.state;
-                if (updates.city !== undefined) dbUpdates.city = updates.city;
-                if (updates.pincode !== undefined) dbUpdates.pincode = updates.pincode;
-                if (updates.fullLengthPhoto !== undefined) dbUpdates.full_length_photo = updates.fullLengthPhoto;
-                if (updates.closeUpPhoto !== undefined) dbUpdates.close_up_photo = updates.closeUpPhoto;
-                if (updates.paymentStatus !== undefined) dbUpdates.payment_status = updates.paymentStatus;
-                if (updates.paymentAmount !== undefined) dbUpdates.payment_amount = Number(updates.paymentAmount || 0);
-                if (updates.razorpayOrderId !== undefined) dbUpdates.razorpay_order_id = updates.razorpayOrderId;
-                if (updates.razorpayPaymentId !== undefined) dbUpdates.razorpay_payment_id = updates.razorpayPaymentId;
-                if (updates.razorpaySignature !== undefined) dbUpdates.razorpay_signature = updates.razorpaySignature;
-                if (updates.paymentDate !== undefined) dbUpdates.payment_date = updates.paymentDate;
-                if (updates.applicationStatus !== undefined) dbUpdates.application_status = updates.applicationStatus;
-                if (updates.message !== undefined) dbUpdates.message = updates.message;
-                if (updates.course !== undefined) dbUpdates.course = updates.course;
-                if (updates.service !== undefined) dbUpdates.service = updates.service;
-                if (updates.address !== undefined) dbUpdates.address = updates.address;
-                if (updates.type !== undefined) dbUpdates.type = updates.type;
+        const { data: updated, error } = await supabase
+            .from('registrations')
+            .update(dbUpdates)
+            .eq('registration_id', id)
+            .select();
 
-                dbUpdates.updated_at = new Date().toISOString();
-
-                const { data: updated, error: updateError } = await supabase
-                    .from('registrations')
-                    .update(dbUpdates)
-                    .eq('registration_id', id)
-                    .select();
-
-                if (updateError) throw updateError;
-                console.log('[DB] Update successful: true (Supabase Update)');
-                return mapFromDb(updated[0]);
-            }
-        } catch (error) {
-            console.error('Error updating row in Supabase, falling back to JSON storage:', error);
-        }
+        if (error) throw error;
+        if (!updated || updated.length === 0) return null;
+        console.log('[DB] Registration updated in Supabase:', id);
+        return mapFromDb(updated[0]);
+    } catch (error) {
+        console.error('[DB] Error updating registration in Supabase:', error);
+        return null;
     }
-
-    const registrations = await getRegistrations();
-    const index = registrations.findIndex(r => r.id === id || r.registrationId === id);
-    if (index !== -1) {
-        registrations[index] = {
-            ...registrations[index],
-            ...updates,
-            updatedAt: new Date().toISOString()
-        };
-        if (updates.registrationId) registrations[index].id = updates.registrationId;
-        if (updates.name) registrations[index].fullName = updates.name;
-        if (updates.dateOfBirth) registrations[index].dob = updates.dateOfBirth;
-
-        await saveRegistrations(registrations);
-        return registrations[index];
-    }
-    return null;
 }
 
 export async function updateRegistrationStatus(id, paymentStatus, applicationStatus, paymentDetails = null) {

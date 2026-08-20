@@ -27,7 +27,10 @@ export async function POST(request) {
             return NextResponse.json({ error: 'Matching candidate registration not found.' }, { status: 404, headers: corsHeaders });
         }
 
-        const rawSecret = process.env.RAZORPAY_LIVE_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET || '';
+        let rawSecret = process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_LIVE_KEY_SECRET || '';
+        if (process.env.RAZORPAY_MODE === 'test' || (!rawSecret && process.env.RAZORPAY_TEST_KEY_SECRET)) {
+            rawSecret = process.env.RAZORPAY_TEST_KEY_SECRET || rawSecret;
+        }
         const keySecret = rawSecret.replace(/^["']|["']$/g, '').trim();
 
         const isConfigured = keySecret && keySecret !== 'your_razorpay_key_secret' && keySecret !== 'your_razorpay_live_key_secret';

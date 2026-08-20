@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import Razorpay from 'razorpay';
-import { getRegistrations, updateRegistration } from '@/lib/db';
+import { getRegistrations, getRegistrationById, updateRegistration } from '@/lib/db';
 import { getCorsHeaders, handleOptions } from '@/lib/cors';
 
 export const dynamic = 'force-dynamic';
@@ -23,8 +23,7 @@ export async function POST(request) {
         }
 
         // Fetch registration from database
-        const registrations = await getRegistrations();
-        const candidate = registrations.find(r => r.registrationId === registrationId || r.id === registrationId);
+        const candidate = await getRegistrationById(registrationId);
 
         if (!candidate) {
             return NextResponse.json({ error: 'Candidate registration not found.' }, { status: 404, headers: corsHeaders });
@@ -41,8 +40,14 @@ export async function POST(request) {
         const amountInPaise = Math.round(totalAmount * 100);
 
         // Check if environment variables are configured (cleansing quotes and spaces)
-        const rawKeyId = process.env.RAZORPAY_LIVE_KEY_ID || process.env.RAZORPAY_KEY_ID || '';
-        const rawKeySecret = process.env.RAZORPAY_LIVE_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET || '';
+        let rawKeyId = process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_LIVE_KEY_ID || '';
+        let rawKeySecret = process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_LIVE_KEY_SECRET || '';
+
+        // If in test mode or live keys are not provided, fallback to test keys
+        if (process.env.RAZORPAY_MODE === 'test' || (!rawKeyId && process.env.RAZORPAY_TEST_KEY_ID)) {
+            rawKeyId = process.env.RAZORPAY_TEST_KEY_ID || rawKeyId;
+            rawKeySecret = process.env.RAZORPAY_TEST_KEY_SECRET || rawKeySecret;
+        }
 
         const keyId = rawKeyId.replace(/^["']|["']$/g, '').trim();
         const keySecret = rawKeySecret.replace(/^["']|["']$/g, '').trim();
