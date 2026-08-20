@@ -145,7 +145,7 @@ Thank you.`;
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative min-h-[92vh] lg:h-screen w-full flex items-center justify-between overflow-hidden bg-[#081C3A] pt-20 lg:pt-16 pb-8 md:pb-12">
+      <section className="relative min-h-[92vh] lg:h-screen w-full flex items-center justify-between overflow-x-hidden overflow-y-visible lg:overflow-hidden bg-[#081C3A] pt-20 lg:pt-16 pb-8 md:pb-12">
         <div className="absolute inset-0 bg-[#081C3A]/40 z-0" />
 
         {/* Subtle oversized background text */}
@@ -161,7 +161,7 @@ Thank you.`;
         <div className="absolute top-1/2 left-10 w-4 h-4 rounded-full bg-[#C9A24D]/15 pointer-events-none z-0" />
         <div className="absolute bottom-1/3 right-12 w-2 h-2 rounded-full bg-[#C9A24D]/35 pointer-events-none z-0" />
 
-        <div className="max-w-7xl mx-auto px-6 md:px-12 w-full h-full grid grid-cols-1 lg:grid-cols-10 gap-8 relative z-10 items-center">
+        <div className="max-w-7xl mx-auto px-6 md:px-12 w-full h-auto lg:h-full grid grid-cols-1 lg:grid-cols-10 gap-8 relative z-10 items-center">
 
           {/* LEFT: Female Model Frame (desktop) */}
           <div className="hidden lg:block lg:col-span-3 h-[72vh] relative">
@@ -184,14 +184,14 @@ Thank you.`;
           <div className="lg:col-span-4 text-center flex flex-col items-center justify-center space-y-4 lg:space-y-6 py-3 md:py-12 z-20">
 
             {/* Mobile Model Banner (Only visible on mobile) */}
-            <div className="block lg:hidden w-full aspect-[3/4] relative max-w-[190px] sm:max-w-[240px] mx-auto mb-3 border border-[#D4AF37]/35 p-1.5 bg-[#0B2347] shadow-lg">
+            <div className="block lg:hidden w-full aspect-[9/16] relative max-w-[280px] xs:max-w-[300px] sm:max-w-[340px] mx-auto mb-3 border border-[#D4AF37]/35 p-1.5 bg-[#0B2347] shadow-lg">
               <Image
                 src="/uploads/poster .jpeg"
                 alt="NINTM Model Auditions Poster"
                 fill
-                sizes="(max-width: 768px) 190px, 240px"
+                sizes="(max-width: 768px) 300px, 340px"
                 quality={80}
-                className="object-cover object-top"
+                className="object-contain"
                 priority
               />
             </div>
@@ -422,7 +422,7 @@ Thank you.`;
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
           {/* LEFT: Black and White Fashion Models image */}
-          <div className="aspect-[4/3] relative border border-[#D4AF37]/25 p-2 bg-[#102B52]">
+          <div className="aspect-square relative border border-[#D4AF37]/25 p-2 bg-[#102B52]">
             <div className="relative w-full h-full overflow-hidden">
               <Image
                 src="/uploads/nintmthecomeback.jpeg"
@@ -430,7 +430,7 @@ Thank you.`;
                 fill
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 500px"
                 quality={75}
-                className="object-cover  hover: transition-all duration-700"
+                className="object-cover hover:scale-[1.03] transition-transform duration-700"
               />
               <div className="absolute inset-0 bg-[#081C3A]/25 pointer-events-none z-10" />
             </div>
@@ -657,8 +657,8 @@ Thank you.`;
       <section className="relative py-28 w-full overflow-hidden text-center bg-[#06162F]">
         <div className="absolute inset-0">
           <Image
-            src="https://images.unsplash.com/photo-1549298916-b41d501d3772?q=80&w=1200"
-            alt="Become a Model Background"
+            src="https://images.unsplash.com/photo-1509631179647-0177331693ae?q=80&w=1200"
+            alt="Fashion Show Runway Background"
             fill
             className="object-cover opacity-20 object-center"
           />

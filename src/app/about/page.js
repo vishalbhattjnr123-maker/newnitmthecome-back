@@ -121,7 +121,7 @@ export default function About() {
                     </p>
                 </div>
 
-                <div className="relative aspect-[4/3] border border-[#D4AF37]/25 overflow-hidden group p-2 bg-[#102B52]">
+                <div className="relative aspect-square border border-[#D4AF37]/25 overflow-hidden group p-2 bg-[#102B52]">
                     <div className="relative w-full h-full overflow-hidden">
                         <Image
                             src="/uploads/nintmcomeback.jpeg"
@@ -146,7 +146,7 @@ export default function About() {
                         Founder & Visionary Mentor
                     </span>
                     <h2 className="font-serif text-4xl md:text-6xl font-light leading-tight text-white uppercase tracking-wide mb-6">
-                        Prasant Sharrma   
+                        Prasant Sharrma
                     </h2>
                     <div className="w-24 h-[1.5px] bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent mx-auto mb-10" />
 

@@ -3,10 +3,9 @@
 import { useState } from 'react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { Mail, Phone, MapPin, User, ChevronDown, ChevronUp, Send, CheckCircle2 } from 'lucide-react';
+import { Mail, Phone, MapPin, User, Send, CheckCircle2 } from 'lucide-react';
 
 export default function ContactFAQ() {
-    const [openFaq, setOpenFaq] = useState(null);
     const [formSubmitted, setFormSubmitted] = useState(false);
     const [contactData, setContactData] = useState({
         name: '',
@@ -14,14 +13,6 @@ export default function ContactFAQ() {
         email: '',
         message: '',
     });
-
-    const toggleFaq = (index) => {
-        if (openFaq === index) {
-            setOpenFaq(null);
-        } else {
-            setOpenFaq(index);
-        }
-    };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -93,48 +84,7 @@ Thank you.`;
         setFormSubmitted(true);
     };
 
-    const faqs = [
-        {
-            q: "How can I apply?",
-            a: "Go to the Become a Model page, complete the multi-step registration form with your physical dimensions and contact coordinates, attach the required Government ID proof and photoshoot uploads, and complete the digital application payment."
-        },
-        {
-            q: "What are the requirements?",
-            a: "Participants should carefully review our eligibility checklist (age 16-30, height 5'3\" for females, 5'7\" for males) and keep three clear photos (close-up, mid-shot, full-length) and government ID proof scanned for attachment."
-        },
-        {
-            q: "Who can participate?",
-            a: "Aspiring male and female models who meet the physical height criteria, age parameters, and are Indian Nationals or NRI status holders can participate."
-        },
-        {
-            q: "What happens after the audition?",
-            a: "Selected candidates will progress through consecutive training bootcamps, physical look tests, editorial photoshoots, brand catalog sessions, and styling rounds heading toward the Grand Finale in December 2026."
-        },
-        {
-            q: "What kind of training is provided?",
-            a: "Comprehensive grooming which covers runway ramp choreography, posing guides under directors, confidence drills, communications, diet and style consultancy, public relations, and legal modeling advice."
-        },
-        {
-            q: "Will I get professional exposure?",
-            a: "Absolutely. Finalists are placed in front of lead fashion designers, advertising directors, print media photographers, and casting agents. NINTM is and has been a premier launchpad since 2012."
-        },
-        {
-            q: "Can beginners participate?",
-            a: "Yes. NINTM welcomes freshers and aspiring models. The program is designed specifically to discover raw potential and polish it to meet global modeling agency standards."
-        },
-        {
-            q: "What should I bring for the audition?",
-            a: "Ensure you carry a digital copy of your payment invoice receipt, a copy of the ID uploaded during registration, and appropriate basic casting outfits (typically high heels, denim, and tight shirts) as directed in the candidate briefing."
-        },
-        {
-            q: "What can the winner expect?",
-            a: "The grand winner will walk away with modeling contracts totaling a value of ₹15 Lakhs INR, legally guaranteed on Stamp Paper with Creativatorss, securing immediate elite runway bookings and media exposure."
-        },
-        {
-            q: "Where can I get audition updates?",
-            a: "Continuous operational news, physical venue shifts, look test calendars, and finalist lists are updated on this portal dashboard and broadcasted across NINTM by Creativatorss social media channels."
-        }
-    ];
+
 
     return (
         <div className="flex flex-col min-h-screen bg-[#081C3A] text-white font-sans text-xs selection:bg-[#D4AF37] selection:text-[#081C3A]">
@@ -290,69 +240,7 @@ Thank you.`;
                     </div>
                 </section>
 
-                {/* Google Maps section */}
-                <section className="space-y-6">
-                    <div className="space-y-3">
-                        <span className="text-[11px] text-[#D4AF37] tracking-[0.3em] font-bold uppercase">
-                            VENUE REACH
-                        </span>
-                        <h2 className="font-serif text-3xl font-bold uppercase text-white">
-                            Google Maps Location
-                        </h2>
-                        <div className="w-12 h-[2px] bg-[#D4AF37]" />
-                    </div>
 
-                    {/* Luxury styled map container with gray filter */}
-                    <div className="relative border border-[#D4AF37]/25 aspect-video md:h-96 w-full overflow-hidden bg-[#0B2347]">
-                        <iframe
-                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3508.8252068694084!2d77.0910123768233!3d28.484803775747514!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x390d193ad0ba5101%3A0xe54d975ebd8fcfdf!2sDLF%20Phase%205%2C%20Sector%2043%2C%20Gurugram%2C%20Haryana%20122002!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
-                            width="100%"
-                            height="100%"
-                            style={{ border: 0, filter: 'grayscale(1) invert(0.9) contrast(1.3)' }}
-                            allowFullScreen=""
-                            loading="lazy"
-                            referrerPolicy="no-referrer-when-downgrade"
-                            title="Creativatorss DLF Phase 5 Gurugram"
-                        />
-                    </div>
-                </section>
-
-                {/* Accordion FAQ Section */}
-                <section id="faq" className="space-y-12">
-                    <div className="text-center">
-                        <span className="text-[11px] text-[#D4AF37] tracking-[0.3em] font-bold uppercase block mb-2">
-                            CASTING HELP BOARD
-                        </span>
-                        <h2 className="font-serif text-3xl md:text-5xl font-bold tracking-tight text-white uppercase">
-                            Frequently Asked Questions
-                        </h2>
-                        <div className="w-12 h-[2px] bg-[#D4AF37] mx-auto mt-4" />
-                    </div>
-
-                    <div className="max-w-3xl mx-auto space-y-4 pt-4">
-                        {faqs.map((faq, index) => {
-                            const isOpen = openFaq === index;
-                            return (
-                                <div key={index} className={`border transition-all duration-300 ${isOpen ? 'border-[#D4AF37] shadow-lg shadow-[#0B2347]/50' : 'border-[#D4AF37]/25'} bg-[#0B2347]`}>
-                                    <header
-                                        onClick={() => toggleFaq(index)}
-                                        className="flex justify-between items-center p-5 cursor-pointer select-none text-left"
-                                    >
-                                        <span className="font-serif text-sm font-bold text-white hover:text-[#D4AF37] transition-colors">
-                                            {index + 1}. {faq.q}
-                                        </span>
-                                        {isOpen ? <ChevronUp className="w-4 h-4 text-[#D4AF37] shrink-0" /> : <ChevronDown className="w-4 h-4 text-[#D9E1EC]/50 shrink-0" />}
-                                    </header>
-                                    {isOpen && (
-                                        <div className="px-5 pb-5 pt-1 text-[#D9E1EC] font-sans leading-relaxed text-xs border-t border-[#D4AF37]/20 animate-fade-in text-left">
-                                            {faq.a}
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
-                </section>
 
             </main>
 
