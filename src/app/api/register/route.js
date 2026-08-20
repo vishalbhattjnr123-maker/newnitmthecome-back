@@ -4,6 +4,9 @@ import { uploadToCloudinary } from '@/lib/cloudinary';
 import path from 'path';
 import { getCorsHeaders, handleOptions } from '@/lib/cors';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 function sanitizeMessage(msg) {
     if (typeof msg !== 'string') return msg;
     let sanitized = msg;

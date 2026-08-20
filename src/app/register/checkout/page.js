@@ -17,6 +17,7 @@ function CheckoutContent() {
     const [processing, setProcessing] = useState(false);
     const [paymentFailed, setPaymentFailed] = useState(false);
     const [paymentError, setPaymentError] = useState('');
+    const [apiError, setApiError] = useState(null);
 
     const baseFee = 699;
     const [gstRate, setGstRate] = useState(0);
@@ -34,8 +35,13 @@ function CheckoutContent() {
 
         setLoading(true);
         const apiBase = '';
-        fetch(`${apiBase}/api/admin?search=${resolvedId}`)
-            .then((res) => res.json())
+        fetch(`${apiBase}/api/admin?search=${resolvedId}`, { cache: 'no-store' })
+            .then((res) => {
+                if (!res.ok) {
+                    throw new Error(`Server returned status: ${res.status}`);
+                }
+                return res.json();
+            })
             .then((data) => {
                 if (data.success && data.registrations.length > 0) {
                     const match = data.registrations.find(
@@ -46,11 +52,16 @@ function CheckoutContent() {
                     const calculatedGst = 0;
                     setGstAmount(calculatedGst);
                     setTotalAmount(baseFee + calculatedGst);
+                } else if (!data.success) {
+                    throw new Error(data.error || 'Failed to retrieve candidate data.');
+                } else {
+                    setApplicant(null);
                 }
                 setLoading(false);
             })
             .catch((err) => {
                 console.error('Error fetching checkout candidate details:', err);
+                setApiError(err.message || 'Unable to connect to registry server.');
                 setLoading(false);
             });
     }, [regId]);
@@ -167,6 +178,28 @@ function CheckoutContent() {
                     <div className="w-12 h-12 border-t-2 border-[#D4AF37] border-r-2 border-r-[#D4AF37]/20 rounded-full animate-spin mx-auto" />
                     <p className="text-xs uppercase tracking-widest font-bold font-sans">Fetching registration details...</p>
                 </div>
+            </div>
+        );
+    }
+
+    if (apiError) {
+        return (
+            <div className="min-h-screen bg-[#081C3A] flex flex-col justify-between">
+                <Navbar />
+                <main className="max-w-md mx-auto px-6 py-40 text-center space-y-6 text-white font-sans text-xs">
+                    <AlertTriangle className="w-12 h-12 text-red-500 mx-auto animate-pulse" />
+                    <h2 className="font-serif text-2xl text-white uppercase font-light font-bold">Unable to load registration</h2>
+                    <p className="text-xs text-[#D9E1EC]/70 leading-relaxed font-normal">
+                        {apiError}. Please check your connection or retry in a brief moment.
+                    </p>
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="px-6 py-2.5 bg-[#D4AF37] hover:bg-[#081C3A] text-[#081C3A] hover:text-[#D4AF37] border border-transparent hover:border-[#D4AF37] text-xs font-bold tracking-wider inline-block transition-all duration-300 font-sans uppercase"
+                    >
+                        RETRY LOADING
+                    </button>
+                </main>
+                <Footer />
             </div>
         );
     }

@@ -17,6 +17,7 @@ function SuccessContent() {
     const [candidate, setCandidate] = useState(null);
     const [loading, setLoading] = useState(true);
     const [showEmailNotice, setShowEmailNotice] = useState(false);
+    const [apiError, setApiError] = useState(null);
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -29,8 +30,13 @@ function SuccessContent() {
 
         setLoading(true);
         const apiBase = '';
-        fetch(`${apiBase}/api/admin?search=${resolvedId}`)
-            .then((res) => res.json())
+        fetch(`${apiBase}/api/admin?search=${resolvedId}`, { cache: 'no-store' })
+            .then((res) => {
+                if (!res.ok) {
+                    throw new Error(`Server returned status: ${res.status}`);
+                }
+                return res.json();
+            })
             .then((data) => {
                 if (data.success && data.registrations.length > 0) {
                     const match = data.registrations.find(
@@ -38,11 +44,16 @@ function SuccessContent() {
                     ) || data.registrations[0];
                     setCandidate(match);
                     setShowEmailNotice(true);
+                } else if (!data.success) {
+                    throw new Error(data.error || 'Failed to retrieve registration data.');
+                } else {
+                    setCandidate(null);
                 }
                 setLoading(false);
             })
             .catch((err) => {
                 console.error('Success fetch error:', err);
+                setApiError(err.message || 'Unable to connect to registry server.');
                 setLoading(false);
             });
     }, [regId]);
@@ -55,7 +66,25 @@ function SuccessContent() {
         return (
             <div className="text-center py-20">
                 <div className="w-10 h-10 border-t-2 border-[#D4AF37] rounded-full animate-spin mx-auto mb-2" />
-                <span className="text-xs uppercase text-[#D9E1EC]/50 tracking-wider">Verifying transaction log...</span>
+                <span className="text-xs uppercase text-[#D9E1EC]/50 tracking-wider">Loading registration...</span>
+            </div>
+        );
+    }
+
+    if (apiError) {
+        return (
+            <div className="text-center py-20 max-w-sm mx-auto space-y-4 font-sans text-xs">
+                <AlertTriangle className="w-12 h-12 text-red-500 mx-auto animate-pulse" />
+                <h2 className="font-serif text-xl text-white uppercase font-light font-bold">Unable to load registration</h2>
+                <p className="text-xs text-[#D9E1EC]/70 leading-relaxed font-normal">
+                    {apiError}. Please check your connection or try again in a brief moment.
+                </p>
+                <button
+                    onClick={() => window.location.reload()}
+                    className="px-6 py-2 bg-[#D4AF37] hover:bg-[#081C3A] text-[#081C3A] hover:text-[#D4AF37] border border-transparent hover:border-[#D4AF37] text-xs font-bold tracking-wider inline-block transition-all"
+                >
+                    RETRY LOADING
+                </button>
             </div>
         );
     }
@@ -64,9 +93,9 @@ function SuccessContent() {
         return (
             <div className="text-center py-20 max-w-sm mx-auto space-y-4 font-sans text-xs">
                 <AlertTriangle className="w-12 h-12 text-[#D4AF37] mx-auto animate-pulse" />
-                <h2 className="font-serif text-xl text-white uppercase font-light">Transaction Record Invalid</h2>
+                <h2 className="font-serif text-xl text-white uppercase font-light">Invalid Registration</h2>
                 <p className="text-xs text-[#D9E1EC]/70 leading-relaxed font-normal">
-                    The payment succeeded, but we couldn&apos;t retrieve the applicant file. Please contact NINTM support coordinates.
+                    No registration record was located matching the provided ID reference code. Please restart or contact support coordinates.
                 </p>
                 <Link href="/" className="px-6 py-2 bg-[#D4AF37] hover:bg-[#081C3A] text-[#081C3A] hover:text-[#D4AF37] border border-transparent hover:border-[#D4AF37] text-xs font-bold tracking-wider inline-block transition-all">
                     RETURN TO HOME

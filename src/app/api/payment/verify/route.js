@@ -3,6 +3,9 @@ import crypto from 'crypto';
 import { getRegistrations, updateRegistration } from '@/lib/db';
 import { getCorsHeaders, handleOptions } from '@/lib/cors';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function OPTIONS(request) {
     return handleOptions(request);
 }
@@ -48,6 +51,7 @@ export async function POST(request) {
         }
 
         if (isSignatureValid) {
+            console.log('[PAYMENT] Verification successful for Order ID:', razorpay_order_id);
             // Update registration status to PAID
             const updatedCandidate = await updateRegistration(candidate.registrationId, {
                 paymentStatus: 'PAID',
@@ -62,6 +66,7 @@ export async function POST(request) {
                 registration: updatedCandidate
             }, { headers: corsHeaders });
         } else {
+            console.log('[PAYMENT] Verification failed for Order ID:', razorpay_order_id);
             // Update registration status to FAILED
             const updatedCandidate = await updateRegistration(candidate.registrationId, {
                 paymentStatus: 'FAILED',

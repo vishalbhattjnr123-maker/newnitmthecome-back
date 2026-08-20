@@ -77,6 +77,7 @@ export async function saveRegistrations(registrations) {
                 addRandomSuffix: false,
                 token: blobToken
             });
+            console.log('[DB] Save successful: true (Vercel Blob)');
             return true;
         } catch (error) {
             console.error('Error writing registration DB to Vercel Blob:', error);
@@ -84,8 +85,10 @@ export async function saveRegistrations(registrations) {
             try {
                 initializeLocalDB();
                 fs.writeFileSync(DB_FILE, JSON.stringify({ registrations }, null, 2), 'utf-8');
+                console.log('[DB] Save successful: true (Local Fallback)');
                 return true;
             } catch (fsErr) {
+                console.log('[DB] Save successful: false');
                 return false;
             }
         }
@@ -93,9 +96,11 @@ export async function saveRegistrations(registrations) {
         try {
             initializeLocalDB();
             fs.writeFileSync(DB_FILE, JSON.stringify({ registrations }, null, 2), 'utf-8');
+            console.log('[DB] Save successful: true (Local)');
             return true;
         } catch (error) {
             console.error('Error writing to registration DB locally:', error);
+            console.log('[DB] Save successful: false');
             return false;
         }
     }
@@ -138,7 +143,6 @@ export async function addRegistration(data) {
 
     registrations.push(newRegistration);
     const saveSuccess = await saveRegistrations(registrations);
-    console.log('[DB] Successful database/Blob save status:', saveSuccess);
     return newRegistration;
 }
 

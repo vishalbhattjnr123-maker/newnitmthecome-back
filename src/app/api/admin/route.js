@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { getRegistrations, saveRegistrations } from '@/lib/db';
 import { getCorsHeaders, handleOptions } from '@/lib/cors';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function OPTIONS(request) {
     return handleOptions(request);
 }
@@ -15,7 +18,7 @@ export async function GET(request) {
         const status = searchParams.get('status') || '';
         const paymentStatus = searchParams.get('paymentStatus') || '';
 
-        console.log('[API Admin GET] Lookup ID / search query:', search);
+        console.log('[DB] Lookup ID:', search);
 
         let list = await getRegistrations();
 
@@ -33,7 +36,7 @@ export async function GET(request) {
                 (r.email && String(r.email).toLowerCase().includes(q)) ||
                 (r.phone && String(r.phone).toLowerCase().includes(q))
             );
-            console.log('[API Admin GET] Matching registration ID(s):', list.map(r => r.registrationId));
+            console.log('[DB] Matching registration ID(s):', list.map(r => r.registrationId));
         }
 
         // Apply state filter
@@ -51,7 +54,7 @@ export async function GET(request) {
             list = list.filter(r => r.paymentStatus && r.paymentStatus.toUpperCase() === paymentStatus.toUpperCase());
         }
 
-        console.log('[API Admin GET] Number of records matching/returned:', list.length);
+        console.log('[DB] Matching record count:', list.length);
 
         return NextResponse.json({ success: true, registrations: list }, { headers: corsHeaders });
     } catch (error) {

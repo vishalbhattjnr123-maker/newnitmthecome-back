@@ -3,6 +3,9 @@ import Razorpay from 'razorpay';
 import { getRegistrations, updateRegistration } from '@/lib/db';
 import { getCorsHeaders, handleOptions } from '@/lib/cors';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function OPTIONS(request) {
     return handleOptions(request);
 }
@@ -65,6 +68,7 @@ export async function POST(request) {
         };
 
         const order = await razorpay.orders.create(options);
+        console.log('[PAYMENT] Order created:', order.id);
 
         // Update database record with Razorpay Order ID & Stated amount
         await updateRegistration(candidate.registrationId, {
