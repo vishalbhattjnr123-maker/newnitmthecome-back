@@ -15,6 +15,8 @@ export async function GET(request) {
         const status = searchParams.get('status') || '';
         const paymentStatus = searchParams.get('paymentStatus') || '';
 
+        console.log('[API Admin GET] Lookup ID / search query:', search);
+
         let list = await getRegistrations();
 
         // Sort by latest created
@@ -31,6 +33,7 @@ export async function GET(request) {
                 (r.email && String(r.email).toLowerCase().includes(q)) ||
                 (r.phone && String(r.phone).toLowerCase().includes(q))
             );
+            console.log('[API Admin GET] Matching registration ID(s):', list.map(r => r.registrationId));
         }
 
         // Apply state filter
@@ -47,6 +50,8 @@ export async function GET(request) {
         if (paymentStatus) {
             list = list.filter(r => r.paymentStatus && r.paymentStatus.toUpperCase() === paymentStatus.toUpperCase());
         }
+
+        console.log('[API Admin GET] Number of records matching/returned:', list.length);
 
         return NextResponse.json({ success: true, registrations: list }, { headers: corsHeaders });
     } catch (error) {

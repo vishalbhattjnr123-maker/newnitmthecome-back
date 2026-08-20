@@ -34,10 +34,12 @@ export async function getRegistrations() {
                 // If db.json does not exist on Vercel Blob, return empty dataset
                 return [];
             }
-            const res = await fetch(dbBlob.url, {
+            const res = await fetch(`${dbBlob.url}?t=${Date.now()}`, {
                 headers: {
                     Authorization: `Bearer ${blobToken}`
-                }
+                },
+                cache: 'no-store',
+                next: { revalidate: 0 }
             });
             if (!res.ok) {
                 throw new Error(`Failed to fetch database file: ${res.statusText}`);
@@ -104,6 +106,7 @@ export async function addRegistration(data) {
 
     // Generate unique Registration ID if not provided
     const registrationId = data.registrationId || data.id || `NINTM-${Math.floor(100000 + Math.random() * 900000)}`;
+    console.log('[DB] Generated registration ID:', registrationId);
 
     const newRegistration = {
         registrationId,
@@ -134,7 +137,8 @@ export async function addRegistration(data) {
     };
 
     registrations.push(newRegistration);
-    await saveRegistrations(registrations);
+    const saveSuccess = await saveRegistrations(registrations);
+    console.log('[DB] Successful database/Blob save status:', saveSuccess);
     return newRegistration;
 }
 
