@@ -56,8 +56,8 @@ export async function GET(request) {
 
         console.log('[DB] Matching record count:', list.length);
 
-        const rzpId = (process.env.RAZORPAY_KEY_ID || '').replace(/^["']|["']$/g, '').trim();
-        const rzpSecret = (process.env.RAZORPAY_KEY_SECRET || '').replace(/^["']|["']$/g, '').trim();
+        const rzpId = (process.env.RAZORPAY_LIVE_KEY_ID || process.env.RAZORPAY_KEY_ID || '').replace(/^["']|["']$/g, '').trim();
+        const rzpSecret = (process.env.RAZORPAY_LIVE_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET || '').replace(/^["']|["']$/g, '').trim();
         const paymentConfigured = !!(rzpId && rzpSecret && rzpId !== 'your_razorpay_key_id' && rzpSecret !== 'your_razorpay_key_secret');
 
         return NextResponse.json({

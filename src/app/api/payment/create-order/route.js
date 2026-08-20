@@ -41,8 +41,8 @@ export async function POST(request) {
         const amountInPaise = Math.round(totalAmount * 100);
 
         // Check if environment variables are configured (cleansing quotes and spaces)
-        const rawKeyId = process.env.RAZORPAY_KEY_ID || '';
-        const rawKeySecret = process.env.RAZORPAY_KEY_SECRET || '';
+        const rawKeyId = process.env.RAZORPAY_LIVE_KEY_ID || process.env.RAZORPAY_KEY_ID || '';
+        const rawKeySecret = process.env.RAZORPAY_LIVE_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET || '';
 
         const keyId = rawKeyId.replace(/^["']|["']$/g, '').trim();
         const keySecret = rawKeySecret.replace(/^["']|["']$/g, '').trim();

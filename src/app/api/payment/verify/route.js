@@ -27,7 +27,7 @@ export async function POST(request) {
             return NextResponse.json({ error: 'Matching candidate registration not found.' }, { status: 404, headers: corsHeaders });
         }
 
-        const rawSecret = process.env.RAZORPAY_KEY_SECRET || '';
+        const rawSecret = process.env.RAZORPAY_LIVE_KEY_SECRET || process.env.RAZORPAY_KEY_SECRET || '';
         const keySecret = rawSecret.replace(/^["']|["']$/g, '').trim();
 
         if (!keySecret || keySecret === 'your_razorpay_key_secret') {
