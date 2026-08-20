@@ -18,6 +18,7 @@ function CheckoutContent() {
     const [paymentFailed, setPaymentFailed] = useState(false);
     const [paymentError, setPaymentError] = useState('');
     const [apiError, setApiError] = useState(null);
+    const [paymentConfigured, setPaymentConfigured] = useState(true);
 
     const baseFee = 699;
     const [gstRate, setGstRate] = useState(0);
@@ -48,6 +49,7 @@ function CheckoutContent() {
                         r => r.registrationId === resolvedId || r.id === resolvedId
                     ) || data.registrations[0];
                     setApplicant(match);
+                    setPaymentConfigured(data.paymentConfigured ?? true);
 
                     const calculatedGst = 0;
                     setGstAmount(calculatedGst);
@@ -103,6 +105,10 @@ function CheckoutContent() {
             const orderData = await orderRes.json();
 
             if (!orderRes.ok || !orderData.success) {
+                const isConfigError = orderData.error?.includes('configured') || orderData.error?.includes('credentials');
+                if (isConfigError) {
+                    setPaymentConfigured(false);
+                }
                 throw new Error(orderData.error || 'Failed to initialize server-side payment order.');
             }
 
@@ -360,13 +366,20 @@ function CheckoutContent() {
                 </div>
 
                 <div className="mt-8 pt-6 border-t border-[#D4AF37]/15 space-y-2">
-                    <button
-                        onClick={handleRazorpayPayment}
-                        disabled={processing}
-                        className="w-full py-4 bg-[#D4AF37] hover:bg-[#081C3A] text-[#081C3A] hover:text-[#D4AF37] border border-transparent hover:border-[#D4AF37] font-sans font-bold text-xs tracking-wider transition-all duration-300 uppercase flex items-center justify-center gap-2"
-                    >
-                        <CreditCard className="w-4 h-4" /> SECURE LAUNCH TO CHECKOUT
-                    </button>
+                    {!paymentConfigured ? (
+                        <div className="w-full py-4 px-4 bg-red-950/20 border border-red-500/25 text-red-200 text-center font-bold text-xs tracking-wider uppercase font-sans leading-relaxed rounded-sm select-none">
+                            🔒 PAYMENT CONFIGURATION ERROR:<br />
+                            <span className="text-[10px] text-red-300/80 font-normal">Razorpay payment gateway is not configured.</span>
+                        </div>
+                    ) : (
+                        <button
+                            onClick={handleRazorpayPayment}
+                            disabled={processing}
+                            className="w-full py-4 bg-[#D4AF37] hover:bg-[#081C3A] text-[#081C3A] hover:text-[#D4AF37] border border-transparent hover:border-[#D4AF37] font-sans font-bold text-xs tracking-wider transition-all duration-300 uppercase flex items-center justify-center gap-2"
+                        >
+                            <CreditCard className="w-4 h-4" /> SECURE LAUNCH TO CHECKOUT
+                        </button>
+                    )}
 
                     <Link
                         href="/register"

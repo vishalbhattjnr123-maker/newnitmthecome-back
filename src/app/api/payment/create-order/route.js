@@ -40,12 +40,17 @@ export async function POST(request) {
         const totalAmount = parseFloat((REGISTRATION_FEE + gstAmount).toFixed(2));
         const amountInPaise = Math.round(totalAmount * 100);
 
-        // Check if environment variables are configured
-        const keyId = process.env.RAZORPAY_KEY_ID;
-        const keySecret = process.env.RAZORPAY_KEY_SECRET;
+        // Check if environment variables are configured (cleansing quotes and spaces)
+        const rawKeyId = process.env.RAZORPAY_KEY_ID || '';
+        const rawKeySecret = process.env.RAZORPAY_KEY_SECRET || '';
 
-        if (!keyId || !keySecret) {
-            console.error('Razorpay credentials missing or set to placeholders.');
+        const keyId = rawKeyId.replace(/^["']|["']$/g, '').trim();
+        const keySecret = rawKeySecret.replace(/^["']|["']$/g, '').trim();
+
+        const isConfigured = keyId && keySecret && keyId !== 'your_razorpay_key_id' && keySecret !== 'your_razorpay_key_secret';
+
+        if (!isConfigured) {
+            console.error('Razorpay credentials missing, unconfigured, or matching placeholders.');
             return NextResponse.json({ error: 'Razorpay payment gateway is not configured.' }, { status: 500, headers: corsHeaders });
         }
 

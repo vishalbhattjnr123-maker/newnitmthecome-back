@@ -27,10 +27,11 @@ export async function POST(request) {
             return NextResponse.json({ error: 'Matching candidate registration not found.' }, { status: 404, headers: corsHeaders });
         }
 
-        const keySecret = process.env.RAZORPAY_KEY_SECRET;
+        const rawSecret = process.env.RAZORPAY_KEY_SECRET || '';
+        const keySecret = rawSecret.replace(/^["']|["']$/g, '').trim();
 
-        if (!keySecret) {
-            console.error('Razorpay key secret not configured for verification.');
+        if (!keySecret || keySecret === 'your_razorpay_key_secret') {
+            console.error('Razorpay key secret not configured or matching placeholder for verification.');
             return NextResponse.json({ error: 'Payment gateway configuration error.' }, { status: 500, headers: corsHeaders });
         }
 

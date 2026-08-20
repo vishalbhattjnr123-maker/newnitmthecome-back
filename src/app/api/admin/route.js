@@ -56,7 +56,15 @@ export async function GET(request) {
 
         console.log('[DB] Matching record count:', list.length);
 
-        return NextResponse.json({ success: true, registrations: list }, { headers: corsHeaders });
+        const rzpId = (process.env.RAZORPAY_KEY_ID || '').replace(/^["']|["']$/g, '').trim();
+        const rzpSecret = (process.env.RAZORPAY_KEY_SECRET || '').replace(/^["']|["']$/g, '').trim();
+        const paymentConfigured = !!(rzpId && rzpSecret && rzpId !== 'your_razorpay_key_id' && rzpSecret !== 'your_razorpay_key_secret');
+
+        return NextResponse.json({
+            success: true,
+            registrations: list,
+            paymentConfigured: paymentConfigured
+        }, { headers: corsHeaders });
     } catch (error) {
         console.error('API Admin GET error:', error);
         return NextResponse.json({ error: 'An error occurred during retrieving data.' }, { status: 500, headers: corsHeaders });

@@ -18,11 +18,12 @@ export async function POST(request) {
             return NextResponse.json({ error: 'Webhook signature header missing.' }, { status: 400, headers: corsHeaders });
         }
 
-        const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
+        const rawWebhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || '';
+        const webhookSecret = rawWebhookSecret.replace(/^["']|["']$/g, '').trim();
 
         // Perform signature verification against raw body contents
-        if (!webhookSecret || webhookSecret === 'YOUR_WEBHOOK_SECRET') {
-            console.warn('RAZORPAY_WEBHOOK_SECRET is not configured. Webhook verification is bypassed.');
+        if (!webhookSecret || webhookSecret === 'YOUR_WEBHOOK_SECRET' || webhookSecret === 'your_razorpay_webhook_secret') {
+            console.warn('RAZORPAY_WEBHOOK_SECRET is not configured or set to placeholder. Webhook verification is bypassed.');
         } else {
             const expectedSig = crypto
                 .createHmac('sha256', webhookSecret)
