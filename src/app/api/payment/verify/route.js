@@ -64,7 +64,7 @@ export async function POST(request) {
                 razorpayPaymentId: razorpay_payment_id,
                 razorpaySignature: razorpay_signature,
                 paymentDate: new Date().toISOString(),
-                paymentAmount: candidate.paymentAmount || 699,
+                paymentAmount: candidate.paymentAmount || 1,
                 applicationStatus: 'Payment Successful'
             });
             return NextResponse.json({
