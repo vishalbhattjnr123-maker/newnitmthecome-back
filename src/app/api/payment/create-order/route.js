@@ -10,7 +10,7 @@ export async function OPTIONS(request) {
     return handleOptions(request);
 }
 
-const REGISTRATION_FEE = 1;
+const REGISTRATION_FEE = 699;
 const GST_RATE = process.env.GST_RATE ? parseFloat(process.env.GST_RATE) : 0; // Default 0% GST rate
 
 export async function POST(request) {

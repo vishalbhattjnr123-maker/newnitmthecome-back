@@ -101,7 +101,7 @@ ${closeUpUrl}
 
 PAYMENT
 
-Registration Fee: ₹${candidate.paymentAmount || '1'}
+Registration Fee: ₹${candidate.paymentAmount || '699'}
 Payment Status: ${candidate.paymentStatus?.toUpperCase() || 'PAID'}
 
 Thank you for registering with NINTM – The Comeback 2026.

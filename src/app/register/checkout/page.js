@@ -20,10 +20,10 @@ function CheckoutContent() {
     const [apiError, setApiError] = useState(null);
     const [paymentConfigured, setPaymentConfigured] = useState(true);
 
-    const baseFee = 1;
+    const baseFee = 699;
     const [gstRate, setGstRate] = useState(0);
     const [gstAmount, setGstAmount] = useState(0);
-    const [totalAmount, setTotalAmount] = useState(1);
+    const [totalAmount, setTotalAmount] = useState(699);
 
     useEffect(() => {
         let isMounted = true;
