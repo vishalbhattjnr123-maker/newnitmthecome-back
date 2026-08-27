@@ -218,6 +218,16 @@ Your payment has been successfully received and your registration is confirmed.`
                 </p>
             </div>
 
+            {/* WhatsApp Redirection Informational Box */}
+            <div className="bg-[#0B2347] border border-[#D4AF37]/20 p-5 flex items-start gap-4 text-left shadow-lg">
+                <AlertTriangle className="w-5 h-5 text-[#D4AF37] shrink-0 animate-pulse mt-0.5" />
+                <div className="space-y-1.5 font-sans">
+                    <p className="text-white font-serif text-sm font-bold uppercase tracking-wider">Please wait, WhatsApp will open shortly.</p>
+                    <p className="text-[#D4AF37] font-bold text-xs">Do not refresh or go back.</p>
+                    <p className="text-[#D9E1EC]/70 text-[11px] font-normal">This may take a few seconds.</p>
+                </div>
+            </div>
+
             {/* Audit Invoice Details card */}
             <div className="bg-[#0B2347] border border-[#D4AF37]/25 p-8 space-y-6 print:border-black print:bg-white print:text-black shadow-2xl">
                 <div className="flex justify-between items-baseline border-b border-[#D4AF37]/20 pb-4 print:border-black">

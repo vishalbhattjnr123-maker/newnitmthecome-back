@@ -204,11 +204,16 @@ export default function Register() {
                 </div>
 
                 {isSubmitting && (
-                    <div className="fixed inset-0 bg-[#081C3A]/90 backdrop-blur-sm z-50 flex items-center justify-center text-center">
-                        <div className="space-y-4">
+                    <div className="fixed inset-0 bg-[#081C3A]/90 backdrop-blur-sm z-50 flex items-center justify-center text-center px-4">
+                        <div className="space-y-4 max-w-sm mx-auto">
                             <div className="w-12 h-12 border-t-2 border-[#D4AF37] border-r-2 border-r-[#D4AF37]/20 rounded-full animate-spin mx-auto" />
                             <p className="text-xs uppercase tracking-widest text-[#D4AF37] font-bold">Uploading files & saving registration...</p>
-                            <p className="text-[10px] text-[#D9E1EC]/60">Redirecting to Payment step next...</p>
+                            <p className="text-[10px] text-[#D9E1EC]/60 mb-2">Redirecting to Payment step next...</p>
+                            <div className="pt-3 border-t border-[#D4AF37]/15 space-y-1 text-[10px] text-[#D9E1EC]/50 font-normal leading-relaxed">
+                                <p>Please wait, we are processing your registration.</p>
+                                <p className="text-[#D4AF37]/80">Do not refresh or go back.</p>
+                                <p>This may take a few seconds. Your payment page will open automatically.</p>
+                            </div>
                         </div>
                     </div>
                 )}
