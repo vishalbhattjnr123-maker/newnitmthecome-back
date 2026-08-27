@@ -69,7 +69,7 @@ function SuccessContent() {
     }, [regId]);
 
     useEffect(() => {
-        if (candidate && candidate.paymentStatus === 'PAID' && !whatsappTriggeredRef.current) {
+        if (candidate && candidate.paymentStatus?.toUpperCase() === 'PAID' && !whatsappTriggeredRef.current) {
             whatsappTriggeredRef.current = true;
 
             const fullLengthUrl = candidate.fullLengthPhoto || '';
@@ -79,17 +79,17 @@ function SuccessContent() {
 
 NEW REGISTRATION
 
-Registration ID: ${candidate.registrationId}
-Name: ${candidate.name}
-Instagram Username: ${candidate.instagramUsername}
-Date of Birth: ${candidate.dateOfBirth}
-Email: ${candidate.email}
-Phone Number: ${candidate.phone}
-WhatsApp Number: ${candidate.whatsapp}
-Height: ${candidate.height}
-State: ${candidate.state}
-City: ${candidate.city}
-Pincode: ${candidate.pincode}
+Registration ID: ${candidate.registrationId || candidate.id || ''}
+Name: ${candidate.name || candidate.fullName || ''}
+Instagram Username: ${candidate.instagramUsername || ''}
+Date of Birth: ${candidate.dateOfBirth || candidate.dob || ''}
+Email: ${candidate.email || ''}
+Phone Number: ${candidate.phone || ''}
+WhatsApp Number: ${candidate.whatsapp || ''}
+Height: ${candidate.height || ''}
+State: ${candidate.state || ''}
+City: ${candidate.city || ''}
+Pincode: ${candidate.pincode || ''}
 
 PHOTO DETAILS
 
@@ -109,9 +109,13 @@ Payment Status: Pending`;
             const whatsappUrl = `https://wa.me/${targetPhone}?text=${encodedText}`;
 
             try {
-                window.open(whatsappUrl, '_blank');
+                const whatsappWindow = window.open(whatsappUrl, '_blank');
+                if (!whatsappWindow || whatsappWindow.closed || typeof whatsappWindow.closed === 'undefined') {
+                    window.location.href = whatsappUrl;
+                }
             } catch (err) {
                 console.error('Failed to trigger pop-up redirect for WhatsApp.', err);
+                window.location.href = whatsappUrl;
             }
         }
     }, [candidate]);
