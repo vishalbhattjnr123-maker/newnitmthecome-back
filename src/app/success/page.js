@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
@@ -18,6 +18,8 @@ function SuccessContent() {
     const [loading, setLoading] = useState(true);
     const [showEmailNotice, setShowEmailNotice] = useState(false);
     const [apiError, setApiError] = useState(null);
+
+    const whatsappTriggeredRef = useRef(false);
 
     useEffect(() => {
         let isMounted = true;
@@ -65,6 +67,54 @@ function SuccessContent() {
             isMounted = false;
         };
     }, [regId]);
+
+    useEffect(() => {
+        if (candidate && candidate.paymentStatus === 'PAID' && !whatsappTriggeredRef.current) {
+            whatsappTriggeredRef.current = true;
+
+            const fullLengthUrl = candidate.fullLengthPhoto || '';
+            const closeUpUrl = candidate.closeUpPhoto || '';
+
+            const whatsappMessage = `NINTM – THE COMEBACK 2026
+
+NEW REGISTRATION
+
+Registration ID: ${candidate.registrationId}
+Name: ${candidate.name}
+Instagram Username: ${candidate.instagramUsername}
+Date of Birth: ${candidate.dateOfBirth}
+Email: ${candidate.email}
+Phone Number: ${candidate.phone}
+WhatsApp Number: ${candidate.whatsapp}
+Height: ${candidate.height}
+State: ${candidate.state}
+City: ${candidate.city}
+Pincode: ${candidate.pincode}
+
+PHOTO DETAILS
+
+Full Length Photo:
+${fullLengthUrl}
+
+Close-Up Photo:
+${closeUpUrl}
+
+PAYMENT
+
+Registration Fee: ₹699
+Payment Status: Pending`;
+
+            const targetPhone = '919631596066';
+            const encodedText = encodeURIComponent(whatsappMessage);
+            const whatsappUrl = `https://wa.me/${targetPhone}?text=${encodedText}`;
+
+            try {
+                window.open(whatsappUrl, '_blank');
+            } catch (err) {
+                console.error('Failed to trigger pop-up redirect for WhatsApp.', err);
+            }
+        }
+    }, [candidate]);
 
     const handlePrintReceipt = () => {
         window.print();

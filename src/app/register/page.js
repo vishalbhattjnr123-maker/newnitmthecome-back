@@ -105,14 +105,6 @@ export default function Register() {
             return;
         }
 
-        // Pre-open blank tab to bypass modern popup blockers (must be synchronous with user click gesture)
-        let whatsappWindow = null;
-        try {
-            whatsappWindow = window.open('about:blank', '_blank');
-        } catch (popenErr) {
-            console.error('Pop-up pre-opening failed:', popenErr);
-        }
-
         setIsSubmitting(true);
 
         try {
@@ -144,67 +136,11 @@ export default function Register() {
 
             const reg = data.registration;
 
-            // Use direct Vercel Blob URLs so they render instantly with rich previews in WhatsApp
-            const fullLengthUrl = reg.fullLengthPhoto || '';
-            const closeUpUrl = reg.closeUpPhoto || '';
-
-            // Prepare WhatsApp pre-filled message
-            const whatsappMessage = `NINTM – THE COMEBACK 2026
-
-NEW REGISTRATION
-
-Registration ID: ${reg.registrationId}
-Name: ${reg.name}
-Instagram Username: ${reg.instagramUsername}
-Date of Birth: ${reg.dateOfBirth}
-Email: ${reg.email}
-Phone Number: ${reg.phone}
-WhatsApp Number: ${reg.whatsapp}
-Height: ${reg.height}
-State: ${reg.state}
-City: ${reg.city}
-Pincode: ${reg.pincode}
-
-PHOTO DETAILS
-
-Full Length Photo:
-${fullLengthUrl}
-
-Close-Up Photo:
-${closeUpUrl}
-
-PAYMENT
-
-Registration Fee: ₹699
-Payment Status: Pending`;
-
-            // Open WhatsApp in new tab (bypassing popup-blocker)
-            const targetPhone = '919631596066';
-            const encodedText = encodeURIComponent(whatsappMessage);
-            const whatsappUrl = `https://wa.me/${targetPhone}?text=${encodedText}`;
-
-            try {
-                if (whatsappWindow) {
-                    whatsappWindow.location.href = whatsappUrl;
-                } else {
-                    window.open(whatsappUrl, '_blank');
-                }
-            } catch (err) {
-                console.error('Failed to trigger pop-up redirect for WhatsApp.', err);
-            }
-
             // Immediately redirect user to Stripe/Razorpay payment checkpoint
             router.push(`/register/checkout?id=${reg.registrationId}`);
 
         } catch (err) {
             console.error(err);
-            if (whatsappWindow) {
-                try {
-                    whatsappWindow.close();
-                } catch (closeErr) {
-                    console.error('Failed to close fallback whatsapp window:', closeErr);
-                }
-            }
             setErrorMsg(err.message || 'An error occurred during submission.');
             setIsSubmitting(false);
         }
