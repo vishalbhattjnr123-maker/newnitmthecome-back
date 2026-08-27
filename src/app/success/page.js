@@ -102,7 +102,10 @@ ${closeUpUrl}
 PAYMENT
 
 Registration Fee: ₹699
-Payment Status: Pending`;
+Payment Status: ${candidate.paymentStatus?.toUpperCase() || 'PAID'}
+
+Thank you for registering with NINTM – The Comeback 2026.
+Your payment has been successfully received and your registration is confirmed.`;
 
             const targetPhone = '919631596066';
             const encodedText = encodeURIComponent(whatsappMessage);
