@@ -13,6 +13,12 @@ export default function Register() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
 
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const todayStr = `${yyyy}-${mm}-${dd}`;
+
     const [formInputs, setFormInputs] = useState({
         name: '',
         instagramUsername: '',
@@ -102,6 +108,12 @@ export default function Register() {
         // Required photos validation
         if (!photos.fullLength || !photos.closeUp) {
             setErrorMsg('Both Full Length and Close-Up photos are required.');
+            return;
+        }
+
+        // Validate Date of Birth (must not be in the future)
+        if (dateOfBirth > todayStr) {
+            setErrorMsg('Date of Birth cannot be in the future or today\'s next date.');
             return;
         }
 
@@ -196,7 +208,7 @@ export default function Register() {
                         <div className="space-y-4">
                             <div className="w-12 h-12 border-t-2 border-[#D4AF37] border-r-2 border-r-[#D4AF37]/20 rounded-full animate-spin mx-auto" />
                             <p className="text-xs uppercase tracking-widest text-[#D4AF37] font-bold">Uploading files & saving registration...</p>
-                            <p className="text-[10px] text-[#D9E1EC]/60">Redirecting to WhatsApp and Payment step next</p>
+                            <p className="text-[10px] text-[#D9E1EC]/60">Redirecting to Payment step next...</p>
                         </div>
                     </div>
                 )}
@@ -258,6 +270,7 @@ export default function Register() {
                                         name="dateOfBirth"
                                         value={formInputs.dateOfBirth}
                                         onChange={handleInputChange}
+                                        max={todayStr}
                                         className="w-full bg-[#081C3A] border border-[#D4AF37]/20 focus:border-[#D4AF37] text-white text-xs px-4 py-3 outline-none"
                                         required
                                     />
